@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { components, slugify } from '@/components/mdx-components';
 import { Metadata } from 'next';
 import Image from 'next/image';
+import Script from 'next/script';
 import rehypePrettyCode from 'rehype-pretty-code';
 import remarkGfm from 'remark-gfm';
 
@@ -96,7 +97,8 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-10 items-start w-full py-4">
-      <script
+      <Script
+        id="json-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
