@@ -15,7 +15,7 @@ export const components: MDXComponents = {
     return <h3 id={slugify(text)} className="scroll-m-24">{children}</h3>;
   },
   img: (props) => {
-    const basePath = process.env.GITHUB_ACTIONS ? '/insidethestack' : '';
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
     const src = props.src?.startsWith('/') ? `${basePath}${props.src}` : (props.src || '');
 
     return (

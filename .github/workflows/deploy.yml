@@ -32,6 +32,8 @@ jobs:
         run: bun install
       - name: Build with Next.js
         run: bun run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /insidethestack
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
