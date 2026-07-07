@@ -78,15 +78,19 @@ export const Navbar = () => {
             <GithubIcon className="text-muted" />
           </Link>
           <ThemeSwitch />
-          <div className="hidden md:flex">
-            <Button
-              className="text-sm font-normal"
-              variant="tertiary"
-              onPress={() => window.open(siteConfig.links.sponsor, "_blank")}
+          <div className="hidden md:flex ml-2">
+            <a 
+              href="https://www.buymeacoffee.com/udthedeveloper" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:opacity-90 transition-opacity"
             >
-              <HeartFilledIcon className="text-danger" />
-              Sponsor
-            </Button>
+              <img 
+                src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=udthedeveloper&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" 
+                alt="Buy me a coffee" 
+                style={{ height: '40px', width: '170px' }} 
+              />
+            </a>
           </div>
         </div>
 

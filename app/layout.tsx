@@ -1,8 +1,8 @@
 import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import clsx from "clsx";
-
 import { Providers } from "./providers";
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
@@ -78,6 +78,7 @@ export default function RootLayout({
             </footer>
           </div>
         </Providers>
+        <GoogleAnalytics gaId="G-XPLRX6HBKB" />
       </body>
     </html>
   );
