@@ -3,6 +3,7 @@
 import { Article } from "@/lib/articles";
 import NextLink from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 interface ArticlesSidebarProps {
   articles: Article[];
@@ -13,6 +14,7 @@ export function ArticlesSidebar({ articles }: ArticlesSidebarProps) {
   const searchParams = useSearchParams();
   const activeCategoryParam = searchParams.get("category");
   const activeSubCategoryParam = searchParams.get("subCategory");
+  const [isOpen, setIsOpen] = useState(false);
 
   // Dynamically build categories from loaded articles
   const dynamicCategories: Record<string, Set<string>> = {};
@@ -44,9 +46,19 @@ export function ArticlesSidebar({ articles }: ArticlesSidebarProps) {
 
   return (
     <aside className="w-full md:w-64 flex-shrink-0">
-      <div className="sticky top-24">
-        <h2 className="text-xl font-bold mb-4">Categories</h2>
-        <div className="flex flex-col gap-4">
+      <div className="md:sticky md:top-24">
+        {/* Mobile Toggle Button */}
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="md:hidden flex items-center justify-between w-full bg-content2 border border-divider rounded-xl px-4 py-3 mb-2 font-bold text-foreground shadow-sm"
+        >
+          <span>Browse Categories</span>
+          <svg className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        {/* Categories List */}
+        <div className={`${isOpen ? 'flex' : 'hidden'} md:flex flex-col gap-4 bg-content2 md:bg-transparent p-4 md:p-0 rounded-xl border border-divider md:border-none shadow-sm md:shadow-none mb-6 md:mb-0`}>
+          <h2 className="hidden md:block text-xl font-bold">Categories</h2>
           <NextLink
             href="/articles"
             className={`font-medium transition-colors ${isAllActive ? 'text-primary' : 'text-foreground/70 hover:text-foreground'}`}
