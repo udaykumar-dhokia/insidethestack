@@ -24,9 +24,13 @@ Multiply that by hundreds of millions of users, and the challenge becomes three-
 
 Optimizing for one dimension usually hurts another. The rest of this article walks through how these tensions get resolved at each layer of the stack.
 
-<img src="/chatgpt1.png" alt="High level request lifecycle diagram" />
-<div className="text-center text-sm text-muted-foreground mt-2">Generated with Google Gemini</div>
-
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Request+Lifecycle+Overview"
+  alt="High level request lifecycle diagram"
+/>
+<div className="text-center text-sm text-muted-foreground mt-2">
+  Generated with Google Gemini
+</div>
 
 ## 1. The Request Lifecycle
 
@@ -57,11 +61,12 @@ A frontier-scale model is far too large to fit on a single GPU. It has to be spl
 The combination of these strategies determines how many GPUs make up a single "replica" of the model capable of serving traffic. A production fleet then runs many replicas across many clusters, coordinated by the scheduler.
 
 <img
-  src="/chatgpt2.png"
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Tensor+%2B+Pipeline+Parallelism"
   alt="Diagram of tensor and pipeline parallelism across GPU nodes"
 />
-<div className="text-center text-sm text-muted-foreground mt-2">Generated with Google Gemini</div>
-
+<div className="text-center text-sm text-muted-foreground mt-2">
+  Generated with Google Gemini
+</div>
 
 ### Example: why batching changes everything
 
@@ -103,9 +108,13 @@ Two widely used mitigations:
 - **PagedAttention-style memory management** — treats KV cache memory like an OS treats virtual memory, allocating it in fixed-size pages rather than one contiguous block per request. This avoids fragmentation and lets a lot more concurrent sessions share the same GPU memory pool.
 - **Prompt/prefix caching** — if many requests share an identical prefix (e.g., the same system prompt or a repeated tool-use scaffold), the KV cache for that prefix is computed once and reused, rather than recomputed per request.
 
-<img src="/chatgpt3.png" alt="Diagram of paged KV cache memory allocation" />
-<div className="text-center text-sm text-muted-foreground mt-2">Generated with Google Gemini</div>
-
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=KV+Cache+%2B+PagedAttention"
+  alt="Diagram of paged KV cache memory allocation"
+/>
+<div className="text-center text-sm text-muted-foreground mt-2">
+  Generated with Google Gemini
+</div>
 
 ## 4. Routing Between Models
 
@@ -133,9 +142,13 @@ To handle this, the system needs:
 - **Cross-region failover** — if one data center degrades, traffic is rerouted, ideally without users noticing beyond a brief latency blip.
 - **Graceful degradation** — under extreme load, a system might temporarily fall back to a smaller/faster model, apply stricter rate limits, or queue requests with a visible wait indicator, rather than failing outright.
 
-<img src="/chatgpt4.png" alt="World map showing multi-region load balancing" />
-<div className="text-center text-sm text-muted-foreground mt-2">Generated with Google Gemini</div>
-
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Global+Load+Balancing+Across+Regions"
+  alt="World map showing multi-region load balancing"
+/>
+<div className="text-center text-sm text-muted-foreground mt-2">
+  Generated with Google Gemini
+</div>
 
 ### Example: queueing under load
 
@@ -167,7 +180,7 @@ At this scale, you cannot debug by reading logs one request at a time. The opera
 - **Real-time anomaly detection** — sudden shifts in refusal rates, latency, or error rates trigger automated alerts, since a regression here affects a huge number of users within minutes.
 
 <img
-  src="/chatgpt5.png"
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Observability+Dashboard+%2F+Golden+Signals"
   alt="Illustration of a monitoring dashboard with latency and throughput graphs"
 />
 <p className="text-center text-sm text-muted-foreground mt-2">
