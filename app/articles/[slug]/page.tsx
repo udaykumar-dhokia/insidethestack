@@ -1,6 +1,7 @@
-import { getArticleBySlug, getAllArticles } from '@/lib/articles';
+import { getArticleBySlug, getAllArticles, Article } from '@/lib/articles';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { components, slugify } from '@/components/mdx-components';
 import { Metadata } from 'next';
 import Image from 'next/image';
@@ -80,6 +81,21 @@ export default async function ArticlePage({ params }: Props) {
   }
 
   const headings = extractHeadings(article.content);
+  const allArticles = getAllArticles();
+  
+  // Find related articles (same category or subcategory, excluding current)
+  const relatedArticles = allArticles
+    .filter(a => a.slug !== article.slug)
+    .filter(a => a.meta.category === article.meta.category || a.meta.subCategory === article.meta.subCategory)
+    .slice(0, 2);
+
+  // If we don't have enough related by category, just backfill with recent ones
+  if (relatedArticles.length < 2) {
+    const backfill = allArticles
+      .filter(a => a.slug !== article.slug && !relatedArticles.find(r => r.slug === a.slug))
+      .slice(0, 2 - relatedArticles.length);
+    relatedArticles.push(...backfill);
+  }
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -152,6 +168,35 @@ export default async function ArticlePage({ params }: Props) {
             }}
           />
         </div>
+
+        {relatedArticles.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-divider">
+            <h2 className="text-2xl font-bold mb-6">Read Next</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {relatedArticles.map(related => (
+                <Link 
+                  key={related.slug} 
+                  href={`/articles/${related.slug}`}
+                  className="group bg-content2 border border-divider rounded-xl overflow-hidden hover:border-primary transition-colors flex flex-col h-full shadow-sm"
+                >
+                  {related.meta.image && (
+                    <div className="w-full h-32 relative overflow-hidden bg-background">
+                      <img 
+                        src={related.meta.image} 
+                        alt={related.meta.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                    </div>
+                  )}
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{related.meta.title}</h3>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{related.meta.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </article>
 
       {headings.length > 0 && (
