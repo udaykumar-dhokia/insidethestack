@@ -3,6 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { components, slugify } from '@/components/mdx-components';
+import { FloatingActionButtons } from '@/components/floating-action-buttons';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -232,6 +233,11 @@ export default async function ArticlePage({ params }: Props) {
           </div>
         </aside>
       )}
+
+      <FloatingActionButtons 
+        title={article.meta.title} 
+        platformUrl={article.meta.platformUrl} 
+      />
     </div>
   );
 }
