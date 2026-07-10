@@ -1,0 +1,135 @@
+---
+title: "How GitHub Actually Works"
+description: "A deep dive into GitHub's architecture  the Rails monolith at its core, the Spokes system that keeps every repository alive on three servers at once, and the scaling decisions behind a platform serving hundreds of millions of developers."
+date: "2026-07-10"
+author: "udthedeveloper"
+image: "https://brand.github.com/_next/static/media/logo-03.cc5e5332.png"
+category: "Developer Tools"
+subCategory: "GitHub"
+platformUrl: "https://github.com"
+---
+
+Every `git push` you've ever run has quietly triggered a small distributed-systems: three servers agreeing to accept your commit, a proxy making sure they all end up with identical bytes, and a background job deciding whether your pull request can still merge cleanly. You never see any of it. That invisibility is the whole point, and also the hardest part to build.
+
+This article looks at how GitHub is put together from the giant Ruby on Rails application that still powers github.com, to the storage system that makes sure your repository survives a server catching fire. As with the earlier pieces in this series, this is a reconstruction from GitHub's own public engineering writing, not their literal internal source.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=One+Push%2C+Many+Moving+Parts"
+  alt="Illustration of a git push triggering multiple backend systems"
+/>
+
+## The Monolith That Refused to Die
+
+Here's something that surprises a lot of developers: github.com, the site handling code for what's now well over 100 million developers, is still at its core a single Ruby on Rails application. Not dozens of independent services, not a trendy microservices mesh from day one. One big app.
+
+According to [GitHub's own engineering blog](https://github.blog/engineering/architecture-optimization/), that monolith has grown into nearly two million lines of code, with more than 1,000 engineers collaborating on it and roughly 20 deployments happening every single day.
+
+Think of it like a house that started as a small cottage and, instead of being torn down and rebuilt every time the family grew, kept getting new rooms added on carefully, without ever asking everyone to move out during construction. That's the monolith story: not a failure to modernize, but a deliberate bet that a well-maintained single codebase, with the right internal boundaries, can outscale a lot of the complexity that comes with splitting everything into services too early.
+
+That doesn't mean everything lives in the monolith forever. GitHub's engineering team has also written about breaking out containerized services to power specific microservices on github.com and various internal tools, growing that architecture around the monolith rather than instead of it, according to the same [GitHub architecture blog](https://github.blog/engineering/architecture-optimization/).
+
+## What Actually Happens When You `git push`
+
+You type `git push`, wait a second or two, see "Everything up-to-date" or a list of new objects, and move on with your day. Under the hood, a lot has to happen correctly in that second.
+
+A detailed community write-up on [DEV Community](https://dev.to/pankajtanwarbanna/how-does-github-store-millions-of-repo-and-billions-of-files-3049) walks through the general shape of it: your request hits a load balancer, gets forwarded to a front-end server, passes through a reverse proxy into worker processes, and eventually reaches the Rails backend, which talks to MySQL and cache layers before touching the actual Git data.
+
+```text
+git push
+  → Load Balancer
+    → Front-end server (Nginx reverse proxy)
+      → Application workers (Ruby on Rails)
+        → Auth + permission checks (Metadata DB)
+        → Git Service (validates objects, runs server-side hooks)
+        → Durable write to repository storage
+        → Reference (branch pointer) updated atomically
+        → Event emitted → triggers CI/CD, search indexing, notifications
+```
+
+That last step an event being emitted after a successful push is what a system-design breakdown on [Medium](https://medium.com/@priyasrivastava18official/system-design-githubs-inner-game-the-architecture-that-swallows-the-world-s-code-and-doesn-t-c54fd53e4800) describes as the trigger for everything downstream: asynchronous indexer workers updating code search, and the CI/CD runner fleet picking up any workflows tied to that branch.
+
+## Spokes: Why Your Repository Never Really Lives in One Place
+
+This is, honestly, the most elegant piece of GitHub's infrastructure, and the one most developers never think about.
+
+Imagine you're storing something precious say, the only copy of a family photo album. You wouldn't keep it in one drawer in one house. You'd want a copy somewhere else too, just in case. GitHub applies exactly that instinct to every single repository, at a scale of hundreds of millions of them.
+
+According to a detailed engineering write-up by [Ajit Singh](https://singhajit.com/how-github-stores-and-serves-git-repositories/), GitHub stores every Git repository on three independent file servers, in a system called Spokes originally launched under the name DGit, for "Distributed Git." When you push, a proxy in front of the file servers streams your update to all three replicas, runs a three-phase commit, and only confirms success once at least two of the three replicas have applied the identical change.
+
+GitHub's own [introductory blog post about DGit](https://github.blog/engineering/architecture-optimization/introducing-dgit/) explains the reasoning in a refreshingly simple way: Git itself is already a distributed system by design every clone contains the project's entire history so rather than bolt on a SAN or an exotic distributed filesystem, GitHub decided to lean into that property. Each file server just runs plain Git, on a normal Linux filesystem, on local disks. No abstraction layer between the code and the disk pretending to be clever.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Spokes%3A+Three+Copies%2C+Zero+Drama"
+  alt="Diagram of three-way repository replication across file servers"
+/>
+
+### Why three copies, and why does it matter
+
+A relatable way to think about the "majority rule": imagine three friends independently checking a math problem. If two of them get the same answer, you trust it. If all three disagree, something's wrong, and you don't move forward until it's sorted out.
+
+A GitHub engineering post on [building resilience in Spokes](https://github.blog/engineering/infrastructure/building-resilience-in-spokes/) explains that no update to a repository is accepted unless a strict majority of replicas can apply the change and produce the same result. That single design decision means a repository can survive an entire server crashing which, at GitHub's scale, is not a hypothetical: the same post describes real incidents like a server going down due to a kernel deadlock or faulty memory chips, and Spokes routing around it automatically within a matter of failed operations.
+
+```text
+Push arrives → Proxy fans out to Replica A, B, C
+  → Replica A: ACK
+  → Replica B: ACK
+  → Replica C: timeout (server unhealthy)
+  → Majority (A + B) confirmed → push accepted
+  → Spokes flags Replica C for automatic healing
+```
+
+### Going cross-continent without breaking
+
+Here's where it gets genuinely tricky. Early versions of Spokes needed replicas to sit physically close together, because higher latency between them limits how many reference updates a repository can sustain per second. But close-together replicas are bad for disaster recovery you want a copy far away in case an entire region goes down.
+
+GitHub's own post on [stretching Spokes across continents](https://github.blog/engineering/infrastructure/stretching-spokes/) lays out just how tight this budget can get: a single network round-trip across the continental US takes something like 60 to 80 milliseconds, and some repositories generate far more reference updates than you'd expect a single push to a popular branch can trigger test-merge and test-rebase computations for every open pull request targeting it, sometimes causing more than a hundred reference updates from one push. The same post describes solving this with an efficient "Spokes checksum" computed incrementally, as an XOR of hashes, so comparing whether two distant replicas actually match doesn't require re-scanning everything from scratch on every single update.
+
+## Where Metadata Lives vs. Where Code Lives
+
+It's worth separating two different problems GitHub has to solve, because they use very different tools:
+
+- **Git object data** (your commits, trees, blobs) lives in Spokes, as plain Git repositories on local disk, exactly as described above.
+- **Everything else** usernames, permissions, issue titles, pull request states, star counts lives in a more conventional relational database layer.
+
+A write-up on [Ajit Singh's blog](https://singhajit.com/how-github-stores-and-serves-git-repositories/) notes that a separate MySQL/Vitess tier handles this repository metadata, while Git LFS (used for large binary files that don't belong in a Git history) stores its objects separately in object storage. This split matters because these two kinds of data have very different access patterns: Git objects are read constantly and rarely modified once written, while metadata like "is this branch protected" or "who has write access" changes far more often and needs strict consistency.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Code+in+Spokes%2C+Metadata+in+MySQL"
+  alt="Diagram separating Git object storage from relational metadata storage"
+/>
+
+## Scaling the Database Layer Itself
+
+A relational database sounds simple until you remember GitHub is handling requests from well over 100 million developers. It's the difference between one librarian managing a small town library, versus needing an entire coordinated system of librarians, branches, and a shared catalog to serve an entire country.
+
+GitHub's own engineering blog describes ongoing work to [partition and shard their relational databases](https://github.blog/engineering/infrastructure/), a project set in motion specifically to meet growth and availability demands as the platform scaled. A Medium write-up on [GitHub's architecture](https://medium.com/@superdev7788/the-secret-sauce-behind-githubs-scale-379ed7a3a78b) adds color here too, describing high-read data being pushed into caching layers like Redis specifically to reduce load on the primary databases.
+
+## CI/CD: Turning Every Push Into a Workflow Trigger
+
+This is the part most developers interact with daily without thinking about the machinery behind it. Every time a workflow file exists in a repo, a push or pull request needs to reliably trigger builds, tests, and deployments potentially for an enormous number of repositories, all at once, all over the world.
+
+GitHub's own engineering team has written about [using GitHub Actions internally](https://github.blog/engineering/), including scaling their CI experience by adopting larger, more powerful runners, and even using macOS and Apple Silicon runners specifically to speed up building and testing their own iOS app. The general pattern, as the system-design breakdown on [Medium](https://medium.com/@priyasrivastava18official/system-design-githubs-inner-game-the-architecture-that-swallows-the-world-s-code-and-doesn-t-c54fd53e4800) describes, is decoupling: CI/CD workflows are handled by a separate, independently scalable runner fleet, coordinated by an event dispatcher, so a sudden burst of builds across thousands of repositories doesn't compete for the same resources as someone simply browsing a repo's file tree.
+
+## Observability: You Can't Fix What You Can't See
+
+At this scale, "just check the logs" stops being a real debugging strategy there are too many logs, spread across too many services, generated by too many simultaneous users. A GitHub engineering post on [tackling platform problems](https://github.blog/engineering/infrastructure/how-github-engineers-tackle-platform-problems/) frames the split nicely: product engineers build the feature, but platform engineers build and maintain the tools that let anyone building on top of the system detect and resolve issues quickly closer to being the people who make sure the workshop has the right tools, rather than building the thing on the workbench themselves.
+
+The same GitHub blog references ongoing work using tools like eBPF to detect problems in deployment tooling, and dedicated efforts around lifecycle management and defense-in-depth observability for critical systems, reflecting a broader pattern: reliability isn't a single feature you ship once, it's a continuous engineering discipline layered across the whole stack.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Observability%3A+Seeing+the+Invisible"
+  alt="Illustration of monitoring dashboards tracking distributed system health"
+/>
+
+## Putting It Together
+
+None of these pieces are impressive in isolation. A monolith is just a big app. A three-replica storage system is just "keep backups." A CI runner fleet is just "run scripts somewhere else." What makes GitHub's infrastructure genuinely hard to build is how these unglamorous pieces have to stay correct and fast at the same time, for hundreds of millions of people, across every timezone, every single day without the average developer ever noticing that any of it exists.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=A+Monolith%2C+Three+Copies%2C+Zero+Downtime"
+  alt="Closing illustration summarizing GitHub's core architecture"
+/>
+
+## What This Means Going Forward
+
+As GitHub leans further into AI-assisted development coding agents, automated triage, and workflows that trigger far more read and write activity per human action than a person typing commands ever would the same old questions get harder, not easier. How do you keep a decade-old monolith flexible enough for new product surfaces? How do you keep Spokes fast when a single automated agent might generate far more reference updates than any human ever did? The infrastructure lessons here aren't really about Git, or Rails, or MySQL specifically. They're about a much older idea: the boring, disciplined parts of a system are usually what make the exciting parts possible.

@@ -1,6 +1,6 @@
 ---
 title: "How Cursor Actually Works"
-description: "A deep dive into how Cursor IDE blends a familiar code editor with AI — from codebase indexing to multi-model routing to how it applies a diff without breaking your file."
+description: "A deep dive into how Cursor IDE blends a familiar code editor with AI  from codebase indexing to multi-model routing to how it applies a diff without breaking your file."
 date: "2026-07-08"
 author: "udthedeveloper"
 image: "https://ptht05hbb1ssoooe.public.blob.vercel-storage.com/assets/brand/brand-logo-2.svg"
@@ -9,11 +9,11 @@ subCategory: "Cursor"
 platformUrl: "https://cursor.com/"
 ---
 
-If you've written code in the last year, you've probably either used Cursor or been annoyed by a friend who won't stop talking about it. It looks like VS Code, feels like VS Code, and honestly _is_ VS Code under the hood — but the moment you hit `Tab` and watch it finish your thought three lines ahead of you, it's clear something very different is going on underneath.
+If you've written code in the last year, you've probably either used Cursor or been annoyed by a friend who won't stop talking about it. It looks like VS Code, feels like VS Code, and honestly _is_ VS Code under the hood but the moment you hit `Tab` and watch it finish your thought three lines ahead of you, it's clear something very different is going on underneath.
 
-This article is a behind-the-scenes look at how an editor like Cursor is actually built — the pieces that make "AI that understands your whole codebase" feel less like a gimmick and more like a co-worker who's read the entire repo.
+This article is a behind-the-scenes look at how an editor like Cursor is actually built the pieces that make "AI that understands your whole codebase" feel less like a gimmick and more like a co-worker who's read the entire repo.
 
-Like the ChatGPT deep dive, this is an engineering-lens reconstruction based on public talks, documentation, and general practice in this space — not Cursor's literal internal source code.
+Like the ChatGPT deep dive, this is an engineering-lens reconstruction based on public talks, documentation, and general practice in this space not Cursor's literal internal source code.
 
 <img
   src="https://placehold.co/1200x500/16213e/e5e5e5?text=A+Familiar+Editor%2C+A+New+Brain"
@@ -24,18 +24,18 @@ Like the ChatGPT deep dive, this is an engineering-lens reconstruction based on 
 
 Imagine you're building a car, and instead of designing wheels, seats, and a steering wheel from scratch, you start with a really good car that already exists and rebuild the engine. That's what Cursor did with VS Code.
 
-VS Code is open source, has a mature extension ecosystem, and developers already have muscle memory for it — keybindings, themes, settings sync, the works. Building on top of it means Cursor didn't have to win the "is this a good editor" argument. It only had to win the "is the AI good" argument. That's a much smaller, much sharper problem to solve.
+VS Code is open source, has a mature extension ecosystem, and developers already have muscle memory for it keybindings, themes, settings sync, the works. Building on top of it means Cursor didn't have to win the "is this a good editor" argument. It only had to win the "is the AI good" argument. That's a much smaller, much sharper problem to solve.
 
-The catch: every time Microsoft ships a VS Code update, Cursor has to merge those upstream changes into their fork without breaking their own AI layer. It's less "build once" and more "maintain a permanent, moving fork" — a very unglamorous, very real engineering cost hiding behind a slick UI.
+The catch: every time Microsoft ships a VS Code update, Cursor has to merge those upstream changes into their fork without breaking their own AI layer. It's less "build once" and more "maintain a permanent, moving fork" a very unglamorous, very real engineering cost hiding behind a slick UI.
 
 ## The Four Main AI Surfaces
 
-Cursor isn't one AI feature — it's several, each solving a different problem:
+Cursor isn't one AI feature it's several, each solving a different problem:
 
-1. **Tab (autocomplete)** — predicts your next edit, sometimes several lines away from your cursor.
-2. **Cmd+K (inline edit)** — select code, describe a change, get a diff applied right there.
-3. **Chat** — a sidebar conversation with context about your project.
-4. **Agent/Composer mode** — give it a task, and it plans, edits multiple files, runs commands, and iterates.
+1. **Tab (autocomplete)** predicts your next edit, sometimes several lines away from your cursor.
+2. **Cmd+K (inline edit)** select code, describe a change, get a diff applied right there.
+3. **Chat** a sidebar conversation with context about your project.
+4. **Agent/Composer mode** give it a task, and it plans, edits multiple files, runs commands, and iterates.
 
 Each of these has different latency requirements, different context needs, and honestly, different models running underneath. That distinction matters a lot for how the system is built.
 
@@ -52,7 +52,7 @@ This is exactly the problem Cursor has to solve on every single keystroke or cha
 
 ### Codebase indexing
 
-When you open a project, Cursor builds an index — chunking your files and turning them into embeddings (numerical representations of meaning, not just text). This lets it later ask "what code in this repo is semantically related to this question?" instead of doing a dumb keyword search.
+When you open a project, Cursor builds an index chunking your files and turning them into embeddings (numerical representations of meaning, not just text). This lets it later ask "what code in this repo is semantically related to this question?" instead of doing a dumb keyword search.
 
 ```python
 # Simplified illustration of what indexing roughly does
@@ -90,7 +90,7 @@ def build_context(query, open_file, recent_edits, index):
     }
 ```
 
-This is the same "retrieval augmented generation" idea used in a lot of AI products, just tuned specifically for source code — where structure (imports, function calls, class hierarchies) matters as much as raw text similarity.
+This is the same "retrieval augmented generation" idea used in a lot of AI products, just tuned specifically for source code where structure (imports, function calls, class hierarchies) matters as much as raw text similarity.
 
 <img
   src="https://placehold.co/1200x500/16213e/e5e5e5?text=Retrieval%3A+Finding+the+Needle+in+the+Repo"
@@ -99,21 +99,21 @@ This is the same "retrieval augmented generation" idea used in a lot of AI produ
 
 ## Why Tab Feels So Fast
 
-If autocomplete took 3 seconds to show up, you'd have already typed the code yourself out of impatience. Tab has to be _fast_ — under a few hundred milliseconds ideally — which rules out routing every keystroke to a giant, slow model.
+If autocomplete took 3 seconds to show up, you'd have already typed the code yourself out of impatience. Tab has to be _fast_ under a few hundred milliseconds ideally which rules out routing every keystroke to a giant, slow model.
 
 So Tab typically runs on a smaller, purpose-built model, fine-tuned specifically on the "predict the next edit" task rather than general conversation. It's also predicting something narrower than Chat is: not "write me a function," but "given what you were just doing, where are you probably about to type next."
 
-That's why Tab sometimes jumps to a completely different line than your cursor — it's not just completing text, it's guessing your _next intended edit location_, based on patterns like "you renamed this variable here, you probably need to rename it in these three other places too."
+That's why Tab sometimes jumps to a completely different line than your cursor it's not just completing text, it's guessing your _next intended edit location_, based on patterns like "you renamed this variable here, you probably need to rename it in these three other places too."
 
 ## Cmd+K: Editing Without Breaking Everything
 
-Say you select a function and ask Cmd+K to "add error handling here." The model doesn't just delete your code and write new code from scratch — that would be a great way to accidentally erase a comment or a subtle edge case you handled six months ago and forgot about.
+Say you select a function and ask Cmd+K to "add error handling here." The model doesn't just delete your code and write new code from scratch that would be a great way to accidentally erase a comment or a subtle edge case you handled six months ago and forgot about.
 
 Instead, the system typically:
 
 1. Sends the selected code plus surrounding context to the model.
 2. Gets back a proposed change, often as a diff rather than a full rewrite.
-3. Applies that diff with a separate, smaller "apply model" that's specifically good at merging a proposed change into existing code precisely — matching whitespace, preserving unrelated lines, resolving small ambiguities.
+3. Applies that diff with a separate, smaller "apply model" that's specifically good at merging a proposed change into existing code precisely matching whitespace, preserving unrelated lines, resolving small ambiguities.
 4. Shows you the diff so you can accept, reject, or edit further.
 
 That "apply model" step is easy to overlook but it's doing real work. A large, powerful model is great at _reasoning_ about what should change; it's not always precise about _exactly_ which characters to touch in a big file. Splitting "figure out the change" from "apply the change precisely" is a pattern that shows up a lot in AI coding tools.
@@ -125,7 +125,7 @@ That "apply model" step is easy to overlook but it's doing real work. A large, p
 
 ## Agent Mode: When the AI Drives for a While
 
-Agent (or Composer) mode is the biggest leap — you describe a task like "add pagination to this API endpoint and update the tests," and it:
+Agent (or Composer) mode is the biggest leap you describe a task like "add pagination to this API endpoint and update the tests," and it:
 
 - reads relevant files
 - plans a sequence of edits across multiple files
@@ -133,7 +133,7 @@ Agent (or Composer) mode is the biggest leap — you describe a task like "add p
 - iterates if something fails
 - reports back what it did
 
-Think of it like handing a task to a junior engineer and getting a checkpoint at each meaningful step rather than reviewing every keystroke. That "checkpoint" idea is important architecturally: agent mode isn't one giant model call, it's a loop — plan, act, observe the result, decide the next action — and the system needs to track enough state to let you undo or roll back if the agent goes down the wrong path.
+Think of it like handing a task to a junior engineer and getting a checkpoint at each meaningful step rather than reviewing every keystroke. That "checkpoint" idea is important architecturally: agent mode isn't one giant model call, it's a loop plan, act, observe the result, decide the next action and the system needs to track enough state to let you undo or roll back if the agent goes down the wrong path.
 
 ```python
 # Simplified agent loop
@@ -148,13 +148,13 @@ def run_agent(task, codebase):
     return summarize_changes()
 ```
 
-This is also where things get expensive fast — multiple model calls per task, sometimes involving large models for planning and smaller ones for individual edits. Routing between model sizes here matters just as much as it does for a product like ChatGPT.
+This is also where things get expensive fast multiple model calls per task, sometimes involving large models for planning and smaller ones for individual edits. Routing between model sizes here matters just as much as it does for a product like ChatGPT.
 
 ## The "Shadow Workspace" Idea
 
-One neat, less obvious problem: if the agent wants to run your code or a linter to check its own work, it shouldn't do that in the actual file you're actively editing — you might have unsaved changes, or you might be mid-thought on something unrelated.
+One neat, less obvious problem: if the agent wants to run your code or a linter to check its own work, it shouldn't do that in the actual file you're actively editing you might have unsaved changes, or you might be mid-thought on something unrelated.
 
-So a common approach is to have the AI work in a hidden, parallel copy of your workspace — sometimes called a "shadow workspace" — where it can make edits, run checks, even execute code, without ever touching your visible editor state until it's confident the change is good. Only then does it surface the diff to you.
+So a common approach is to have the AI work in a hidden, parallel copy of your workspace sometimes called a "shadow workspace" where it can make edits, run checks, even execute code, without ever touching your visible editor state until it's confident the change is good. Only then does it surface the diff to you.
 
 It's a small detail, but it's the difference between an AI assistant that feels safe to hand tasks to, and one that makes you nervous every time it starts "helping."
 
@@ -171,13 +171,13 @@ A very relatable concern: nobody wants their proprietary codebase silently uploa
 - Enterprise setups often support private/self-hosted indexing or opting out of any data retention for training.
 - There's a constant trade-off between "send more context to the model for a better answer" and "send less to respect privacy and reduce latency/cost."
 
-This isn't just a policy checkbox — it directly affects how much context the retrieval system is allowed to gather and send, which in turn affects answer quality. Privacy constraints are an architectural input, not an afterthought bolted on at the end.
+This isn't just a policy checkbox it directly affects how much context the retrieval system is allowed to gather and send, which in turn affects answer quality. Privacy constraints are an architectural input, not an afterthought bolted on at the end.
 
 ## Multiple Models, One Seamless Feel
 
-Pulling this all together: Tab, Cmd+K, Chat, and Agent likely use _different_ underlying models, chosen for their specific latency/quality trade-off — plus routing logic to pick the right model provider or size per task, similar in spirit to how a large chat product routes between "cheap and fast" and "big and smart" depending on the question.
+Pulling this all together: Tab, Cmd+K, Chat, and Agent likely use _different_ underlying models, chosen for their specific latency/quality trade-off plus routing logic to pick the right model provider or size per task, similar in spirit to how a large chat product routes between "cheap and fast" and "big and smart" depending on the question.
 
-The trick is making all of that invisible. From your side, it just feels like "the editor understands my code." Underneath, it's a orchestration of indexing pipelines, retrieval systems, multiple specialized models, diff-application logic, and safety rails like shadow workspaces — all working together so that the only thing you notice is how much faster you're shipping.
+The trick is making all of that invisible. From your side, it just feels like "the editor understands my code." Underneath, it's a orchestration of indexing pipelines, retrieval systems, multiple specialized models, diff-application logic, and safety rails like shadow workspaces all working together so that the only thing you notice is how much faster you're shipping.
 
 <img
   src="https://placehold.co/1200x630/1a1a2e/ffffff?text=One+Editor%2C+Many+Moving+Parts"
@@ -188,4 +188,4 @@ The trick is making all of that invisible. From your side, it just feels like "t
 
 As agent mode gets more autonomous and context windows keep growing, the interesting problems shift: how do you let an AI safely run for longer stretches without supervision? How do you keep retrieval accurate in codebases with millions of lines? How do you keep trust high when the AI is making more decisions on your behalf?
 
-None of these are solved with one clever trick. Like most hard infrastructure problems, they're solved with a dozen unglamorous, well-engineered pieces working quietly together — which, fittingly, is exactly the kind of problem Cursor itself is built to help you solve.
+None of these are solved with one clever trick. Like most hard infrastructure problems, they're solved with a dozen unglamorous, well-engineered pieces working quietly together which, fittingly, is exactly the kind of problem Cursor itself is built to help you solve.
