@@ -10,9 +10,21 @@ interface FloatingActionButtonsProps {
 export function FloatingActionButtons({ title, platformUrl }: FloatingActionButtonsProps) {
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState('');
+  const [showTop, setShowTop] = useState(false);
 
   useEffect(() => {
     setUrl(window.location.href);
+
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowTop(true);
+      } else {
+        setShowTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleShare = async () => {
@@ -39,8 +51,21 @@ export function FloatingActionButtons({ title, platformUrl }: FloatingActionButt
     }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 flex flex-col gap-3 z-50">
+      {showTop && (
+        <button
+          onClick={scrollToTop}
+          className="group flex items-center justify-center w-14 h-14 rounded-full bg-content2 border border-divider shadow-lg hover:border-primary hover:text-primary transition-all duration-300"
+          title="Scroll to Top"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+        </button>
+      )}
       {platformUrl && (
         <a 
           href={platformUrl}
