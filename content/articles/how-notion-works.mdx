@@ -1,0 +1,121 @@
+---
+title: "How Notion Actually Works"
+description: "A deep dive into Notion's architecture the block-based data model at its core, how it scaled a single Postgres database to 200 billion blocks, and how real-time collaboration stays smooth across millions of users."
+date: "2026-07-12"
+author: "udthedeveloper"
+image: "https://cdn.dribbble.com/userupload/30613445/file/still-cb1bfc4919e3b77afd442d6440d79d16.png"
+category: "Developer Tools"
+subCategory: "Notion"
+platformUrl: "https://notion.com"
+---
+
+Open a Notion page and drag a to-do item under a heading. Turn a bullet point into a table. Nest a database inside a toggle inside another page. It all feels effortless, like the software is made of digital clay you can reshape however you want. That flexibility isn't a UI trick it's the direct result of one foundational decision made early on, and everything else in this article follows from it.
+
+This piece walks through how Notion is actually built: the data model that makes all that flexibility possible, and the very real scaling battles that came with it once the product went from a few hundred users to over 100 million. Most of what follows is drawn directly from Notion's own engineering blog, so unlike some of the earlier articles in this series, we get to hear this one mostly straight from the source.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Everything+You+See+Is+a+Block"
+  alt="Illustration of different Notion content types all sharing one structure"
+/>
+
+## The One Idea Everything Else Is Built On
+
+Most productivity tools make you pick a lane. A document editor gives you paragraphs. A spreadsheet gives you cells. A task tracker gives you cards. If you want all three, you're juggling three different apps and copy-pasting between them.
+
+Notion's own engineering blog explains the decision that avoided this: [everything you see in Notion is a block](https://www.notion.com/blog/data-model-behind-notion) text, images, lists, a database row, even entire pages. They're all the same underlying object, just rendered differently depending on their type. A to-do item and an entire page are, structurally, close cousins. That single decision is why you can drag a paragraph into a table, or nest a whole database inside a bullet point, without the app needing a special case for every possible combination.
+
+```json
+{
+  "object": "block",
+  "id": "c02f...aea7",
+  "type": "heading_2",
+  "has_children": false
+}
+```
+
+The same blog post notes this consistency is why features like "Turn into" work so smoothly changing a bullet point into a heading isn't a messy content conversion, it's just relabeling the block's `type` field while the rest of its structure stays exactly the same.
+
+## Two Kinds of Pointers, for Two Very Different Jobs
+
+Every block needs to know two different things: what it contains (so it can be rendered on screen), and who's allowed to see it (so permissions work correctly). You might assume these are the same relationship. They're not.
+
+A breakdown on [HowWorks](https://howworks.ai/blog/how-notion-was-built) explains that Notion uses two separate relationships between blocks: a **content** pointer the ordered list of child block IDs used purely for rendering what's nested inside what and a separate **parent** pointer, used specifically for figuring out permissions. The same piece explains why these had to be split apart: historically, a single block could be referenced by more than one content array (the same block reused in two places), which makes "who owns this for permission purposes" genuinely ambiguous if you only had one relationship to work with. Walking upward through every possible content array to check permissions would also be painfully slow, especially on the client.
+
+Think of it like a shared Google Photos album versus an actual physical photo album. A photo might appear inside three different shared albums (that's the "content" relationship where it visually shows up), but it still has exactly one place it was originally uploaded from, which is what actually determines who's allowed to delete it. Separating "where does this appear" from "who really owns this" is the same instinct at work.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Content+Pointer+vs+Parent+Pointer"
+  alt="Diagram distinguishing rendering relationships from permission relationships"
+/>
+
+## What Happens the Instant You Type
+
+You type a letter, and it just appears no spinner, no lag, even if your Wi-Fi briefly hiccups. Notion's own blog describes the flow behind that: your edit is applied **locally first, optimistically**, so the interface updates instantly without waiting for a server round-trip. That change is then sent to the server, which validates it against the "before" and "after" state for permissions and data correctness, and only then commits it to the database.
+
+Once committed, the same [Notion engineering post](https://www.notion.com/blog/data-model-behind-notion) explains that a chain of background work kicks off: a version history snapshot gets scheduled, the block's text gets indexed for Quick Find search, and Notion's real-time updates service called MessageStore gets notified so the change can be pushed out to anyone else viewing that page.
+
+```text
+You type a letter
+  → Applied instantly to your local view (optimistic)
+  → Sent to server for validation
+  → Committed to the database
+  → Triggers: search indexing, version snapshot, real-time broadcast
+  → Your teammate's screen updates, live
+```
+
+This "apply locally first, sync in the background" pattern is exactly why Notion keeps working when your internet briefly drops you're never actually waiting on the network to see your own typing show up.
+
+## From One Database to Two Hundred Billion Blocks
+
+This is where the story gets genuinely dramatic, and it's a great lesson in how "just add more servers" eventually stops being an option.
+
+According to a technical write-up on [Relbis Labs](https://labs.relbis.com/blog/2024-04-18_notion_backend/), Notion started with a single PostgreSQL database, hosted on Amazon RDS, handling every request the product made. As usage grew, the team's answer was simple: make that one server bigger a strategy called vertical scaling. It's the database equivalent of upgrading to a bigger desk when your current one gets cluttered. That works for a while. It doesn't work forever.
+
+A deep dive on [ByteByteGo](https://blog.bytebytego.com/p/storing-200-billion-entities-notions) describes what happened next: even the largest database instance Amazon offered eventually couldn't keep up, so the team had to split that single server into a cluster of many smaller ones a technique called sharding. Instead of one enormous desk, you now have many separate desks, each responsible for a specific slice of the work.
+
+The critical decision was picking the right way to divide that work. A summary on [Lorenzo Palaia's blog](https://www.lorenzopalaia.com/blog/how-notion-scaled-to-handle-billions-of-blocks) explains that Notion chose **workspace ID** as the sharding key meaning every block belonging to the same team or user's workspace lives together on the same shard. That choice wasn't arbitrary: since users overwhelmingly work within their own workspace, keeping all of a workspace's blocks physically together avoids the slow, expensive "reach across multiple servers to answer one query" problem that comes with picking a bad sharding key.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Sharded+by+Workspace+ID"
+  alt="Diagram of database sharding using workspace ID as the partition key"
+/>
+
+By 2023, according to [Relbis Labs](https://labs.relbis.com/blog/2024-04-18_notion_backend/), that cluster had grown to 96 database servers, each logically split into 5 shards and a more recent breakdown from [TechAhead](https://www.techaheadcorp.com/blog/tech-stack-powering-notion-block-based-editor/) puts the more current figure at 32 physical instances housing 480 logical shards, now handling more than 200 billion blocks with sub-second latency. That same piece notes Notion layers in read replicas to absorb roughly 90% of read traffic away from the primary databases, plus an in-memory Redis cache in front of everything for sub-millisecond lookups on the most frequently accessed blocks and PgBouncer, a connection pooler, sitting in between to stop the sharded fleet from getting overwhelmed by too many simultaneous connections.
+
+### The migration itself had to happen without anyone noticing
+
+Here's the genuinely hard part, and it's a very relatable engineering fear: how do you completely rebuild the foundation of a house while people are still living in it?
+
+A write-up on [wildwildtech](https://wildwildtech.substack.com/p/how-notion-stores-the-data-and-scale) describes the technique: Notion used a "double write" strategy, writing every change to both the old, single database and the new, sharded one simultaneously, along with audit logs and a catch-up script to reconcile any drift between the two. The result, per the same piece, was a migration across a huge user base with only a brief window of downtime not the days-long outage you might expect from moving your entire data foundation.
+
+## Why a Data Warehouse Alone Wasn't Enough
+
+Here's a wrinkle that's easy to miss: most companies' data mostly gets **added to** over time new rows, new records. Notion's own engineering blog points out something different about their workload: [users update existing blocks](https://www.notion.com/blog/building-and-scaling-notions-data-lake) editing text, checking off to-dos, changing headings far more often than they create brand-new ones. About 90% of all block writes are updates, not inserts.
+
+That matters because most data warehouses, including the Snowflake setup Notion originally relied on for analytics, are optimized for the opposite pattern: lots of inserts, not constant updates. The same blog post explains that ingesting Notion's genuinely unusual, update-heavy block data into that kind of warehouse became slower and more expensive as the company grew like trying to use a filing cabinet designed for adding new folders, when what you actually need is a system built for constantly rewriting the folders you already have.
+
+The fix, according to the same post, was building a dedicated data lake offloading heavy data processing to Amazon S3 and using Apache Spark to handle the complex tree-traversal logic block data requires, only feeding fully cleaned, business-critical data into Snowflake afterward. This wasn't about replacing Snowflake entirely; it was about giving update-heavy workloads a home actually built for them.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Update-Heavy+Data+Needs+a+Different+Home"
+  alt="Diagram contrasting insert-heavy and update-heavy data pipelines"
+/>
+
+## Where This Data Lake Pays Off: Notion AI
+
+This is a nice example of infrastructure work quietly enabling a much flashier feature later. A recap of a Notion engineering talk on [Onehouse](https://www.onehouse.ai/blog/notions-journey-through-different-stages-of-data-scale) explains how the same data lake became the foundation for Notion's Q&A AI feature the one that lets you ask questions and get answers based on your team's entire Notion workspace.
+
+To make that work, the team needed a vector database storing embeddings mathematical representations of chunks of text so the AI could look up the most relevant pieces of a workspace before answering a question. The same talk describes two update paths feeding that vector database: a large one-time batch job to bootstrap it for each workspace, and a continuous stream of incremental updates, broadcast through Kafka, whenever a block gets edited. Without years of prior work making update-heavy block data actually manageable at scale, a feature like this would have been a much harder problem to solve well.
+
+## Putting It Together
+
+None of these pieces are flashy on their own. A block is just a fancy name for "one small piece of content." Sharding is just "split your database into pieces." A data lake is just "store your data somewhere cheaper before cleaning it up." What makes Notion's engineering story compelling is the sequence: a genuinely elegant data model chosen at the very beginning, and then years of unglamorous, careful scaling work to make sure that same simple idea could still hold up under 200 billion blocks and 100 million users, without the person typing a to-do item ever noticing any of it.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=One+Block%2C+Two+Hundred+Billion+Times+Over"
+  alt="Closing illustration summarizing Notion's scaling story"
+/>
+
+## What This Means Going Forward
+
+As AI features become a bigger part of how people use Notion asking questions across an entire workspace, summarizing pages, generating content the same block model and the same hard-won sharded, update-heavy infrastructure keep having to do double duty: serving instant edits to a person typing right now, while also feeding increasingly complex AI pipelines in the background. The lesson underneath it all isn't really about Postgres or Spark specifically. It's that a good, simple idea at the foundation one block, one shape, for everything can absorb an enormous amount of future complexity, as long as the infrastructure around it is willing to keep evolving.
