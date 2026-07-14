@@ -1,0 +1,153 @@
+---
+title: "How Vercel Actually Works"
+description: "A deep dive into Vercel's architecture the deployment pipeline, the global edge network, and the serverless and edge functions that let a git push turn into a live, fast website anywhere in the world."
+date: "2026-07-14"
+author: "udthedeveloper"
+image: "https://cdn.prod.website-files.com/68a44d4040f98a4adf2207b6/6a3c3f9adf5791e4e60eef39_og_case-study-vercel.jpg"
+category: "Software Engineering"
+subCategory: "Vercel"
+platformUrl: "vercel.com"
+---
+
+You push code to GitHub. A minute later, a link shows up: `your-app.vercel.app`, already live, already fast, already working for anyone in the world who clicks it. No server to rent, no Nginx config to write, no "which region should I deploy to" decision to agonize over. It just works.
+
+That simplicity is the whole product. And like most things that feel effortless on the surface, it's hiding a genuinely well-engineered system underneath. This article walks through what actually happens between your `git push` and that live URL in plain language, with relatable comparisons along the way. Most of this comes straight from Vercel's own engineering blog, so we get a lot of this one directly from the source.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=git+push+%E2%86%92+Live+URL"
+  alt="Illustration of code being pushed and instantly becoming a live website"
+/>
+
+## The Two Halves of the Story
+
+There are two completely different phases involved, and they happen at completely different times. There's the **build phase** turning your code into something servable, which happens once, right after you push. And there's the **request phase** serving that finished result to actual visitors, which happens constantly, every time anyone loads your site.
+
+Vercel's own engineering blog, in a post titled [Behind the Scenes of Vercel's Infrastructure](https://vercel.com/blog/behind-the-scenes-of-vercels-infrastructure), walks through both halves in detail, and that's the structure we'll follow here too.
+
+## Phase One: What Happens When You Push Code
+
+Think of this like sending a manuscript to a print shop. You don't hand a reader your Word document the print shop first typesets it, prints it, binds it, and only then is it ready to go on a shelf. Your code goes through something similar before it's ready to be visited.
+
+According to Vercel's own blog, a deployment can start from any of over 35 supported frameworks, triggered either through the Vercel CLI or by simply pushing to your connected git repository. A walkthrough on [Medium](https://medium.com/@mayank2803sharma/demystifying-vercel-how-it-works-and-how-to-create-vercel-763586070478) breaks this into simple steps: your project's files first get uploaded to durable cloud storage (conceptually similar to Amazon S3), and once that upload succeeds, a separate request kicks off the actual build.
+
+A more recent guide from [FocusReactive](https://focusreactive.com/what-is-vercel/) describes what happens inside that build step: Vercel automatically detects your framework from your project's configuration, restores your dependencies from a cache if your lockfile hasn't changed (skipping a slow reinstall), runs your actual build command, and then this is the clever part inspects the output and classifies every single file into one of three buckets: a static asset to be served straight from a CDN, a Serverless Function, or an Edge Function.
+
+```text
+git push
+  → Files uploaded to durable storage
+  → Build container provisions resources, runs your build
+  → Vercel inspects the output:
+      - Static file? → goes to static storage / CDN
+      - Server-rendered page or API route? → becomes a Serverless Function
+      - Middleware or edge-runtime code? → becomes an Edge Function
+  → Deployment metadata is saved
+  → Deployment is now ready to serve on Vercel's network
+```
+
+Vercel's own blog confirms this last step directly: once resources are provisioned, a deployment record is created and its metadata is uploaded to static storage and that metadata is exactly what gets used later to route an incoming visitor to the correct resource, based on the path they requested.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Static%2C+Serverless%2C+or+Edge%3F"
+  alt="Diagram showing build output classified into static, serverless, and edge buckets"
+/>
+
+## Phase Two: What Happens When Someone Actually Visits Your Site
+
+This is the part that happens millions of times a day, and it needs to be fast every single time. Think of it like a really well-run reception desk at a huge building. It doesn't matter how big the building is the receptionist instantly knows exactly which floor, which room, and which department to send you to, without you waiting around while they figure it out.
+
+Vercel's own blog walks through the request lifecycle starting from the very first step: a browser has to perform a DNS lookup before it can even reach the site, and for anything hosted on Vercel, that lookup always resolves to an anycast IP address that Vercel itself owns. Anycast is worth pausing on it means the exact same IP address is announced from many locations around the world simultaneously, and your request automatically gets routed to whichever one is physically closest to you, without you or your browser having to know anything about where that is.
+
+Once the request lands at the right location, the same blog post explains the gateway's decision-making gets genuinely nuanced, depending on what was actually requested:
+
+- **Static resources** (a static page, a font, an unoptimized image) the gateway just pulls it directly from static storage.
+- **Vercel Functions** (a server-rendered page or API route) the gateway triggers a Serverless Function execution, specifically in the region that function was deployed to.
+- **Edge Functions** the gateway formats the request to invoke execution right at the edge location itself, rather than a specific backend region.
+- **Pages using Incremental Static Regeneration** the gateway first checks whether this exact page has already been rendered and cached before deciding whether to serve the cached version or regenerate it.
+
+```text
+Browser → DNS lookup → Vercel's anycast IP (nearest location)
+  → Gateway inspects the request
+      - Static file → serve from storage directly
+      - Serverless Function → route to its deployed region, execute
+      - Edge Function → execute right here, at this edge location
+      - ISR page → check cache first, regenerate if needed
+  → Response streamed back to the browser
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Anycast%3A+Same+Address%2C+Nearest+Door"
+  alt="Diagram of anycast routing sending requests to the nearest edge location"
+/>
+
+## Serverless Functions vs. Edge Functions: Two Very Different Tools
+
+This distinction trips a lot of developers up, so it's worth being plain about it. Both let you run backend code without managing a server but they're built for genuinely different jobs, and picking the wrong one for a task actually costs you real performance.
+
+A guide on [Upstash's blog](https://upstash.com/blog/vercel-edge) explains the core difference simply: your code, when deployed as an Edge Function, effectively gets replicated across Vercel's edge locations, so when a user calls your endpoint, it executes at whichever location is physically closest to them cutting out the network latency that comes from the distance between a user and a single, centralized server.
+
+An interview with Vercel's CTO, Malte Ubl, on [The New Stack](https://thenewstack.io/vercel-brings-serverless-functions-to-the-edge/), puts real numbers on why this matters: traditional serverless setups involve dozens to hundreds of milliseconds of cold-start time, while Edge Functions cut that down to just dozens of milliseconds largely because traditional serverless functions run inside a full microVM with its own startup process, while the edge runtime is a much lighter V8 JavaScript engine that can spin up far faster.
+
+A Serverless Function is like calling a specialist at a specific office they might take a little longer to pick up, but they have access to the full toolkit and can handle heavy, complicated work. An Edge Function is like asking a quick question to whoever's standing nearest to you right now nearly instant, but best suited for fast, lightweight decisions rather than heavy lifting.
+
+That's exactly the guidance in the same New Stack interview: Ubl notes that not every location is equally trusted or suited for every job running a cache somewhere is fine, but you don't necessarily want your core compute logic sitting just anywhere, which is part of why Edge Functions are intentionally kept to a smaller set of well-chosen global locations rather than absolutely everywhere.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Serverless%3A+The+Specialist%2C+Edge%3A+The+Nearest+Desk"
+  alt="Diagram contrasting Serverless Functions and Edge Functions"
+/>
+
+### A relatable example: where should your code actually run?
+
+- Checking if a user is logged in before showing a page → a great fit for an Edge Function. Fast, simple, needs to happen close to the user, before the page even loads.
+- Processing a payment or querying a database → better suited to a Serverless Function, since it needs proximity to your actual data and the heavier tooling a full runtime provides.
+- Serving your homepage's hero image → doesn't need either it's just a static file, served straight from the CDN.
+
+A practical guide on [Techtic](https://www.techtic.com/blog/how-vercel-works-beginner-friendly-guide/) reinforces this same idea, noting that Edge compute isn't meant for heavy computation, and that authentication checks in particular should almost always run at the edge for maximum speed while also pointing out a common mistake: developers reaching for a fully server-rendered page when a much cheaper, faster static page would have done the job just as well.
+
+## The Tricky Problem: Streaming Responses From a Serverless Function
+
+Here's a genuinely interesting engineering problem, and a good example of Vercel solving a limitation in the tools they build on top of, rather than just accepting it.
+
+Vercel's own engineering blog, in a post on [streaming from serverless functions](https://vercel.com/blog/streaming-for-serverless-node-js-and-edge-runtimes-with-vercel-functions), explains that their serverless architecture is largely powered by AWS Lambda and AWS Lambda, at least at the time that post was written, didn't natively support returning a response as a stream of data. That's a real problem for something like an AI chatbot response that needs to appear word by word, rather than all at once after a long wait.
+
+The same post describes the workaround: when a request comes in for a Serverless Function with streaming enabled, it's first routed through an edge location, which forwards it to a dedicated invocation service. That service modifies the request to include a callback URL specifically for streaming, before forwarding it on to the actual Lambda function. Inside Lambda, custom bridge code written specifically by Vercel's engineering team uses that callback URL to open a connection back to the invocation service, streaming the response back in chunks as it's generated, rather than waiting for the entire thing to finish first.
+
+```text
+Client requests a streaming response
+  → Edge location forwards request to Invocation Service
+  → Invocation Service adds a callback URL, forwards to AWS Lambda
+  → Lambda generates the response
+  → Custom bridge code streams chunks back via the callback URL
+  → Invocation Service relays each chunk back to the client immediately
+  → Client renders content as it arrives, instead of waiting for it all
+```
+
+Imagine ordering a coffee, and instead of waiting silently until the entire drink is made, the barista hands you the espresso shot the second it's pulled, then the milk right after, then the foam last you start enjoying the coffee immediately instead of standing there watching the whole process with nothing to show for it. That's the actual user-facing benefit of this entire, fairly involved piece of bridge engineering.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Streaming%3A+Serving+Chunks%2C+Not+Waiting+for+the+Whole+Thing"
+  alt="Diagram of the custom streaming bridge built on top of AWS Lambda"
+/>
+
+## Caching: Doing the Work Once, Serving It Many Times
+
+A guide from [Fishtank](https://www.getfishtank.com/insights/what-is-vercel) describes Vercel's approach as multi-layered caching across the browser, the edge, and the origin server all working together to speed up load times without every single request having to redo the same work from scratch. The same guide notes this pairs with automatic image optimization (resizing and compressing files automatically) and Incremental Static Regeneration, which lets static content get refreshed in the background without requiring a full site rebuild every time something small changes.
+
+It's the difference between a restaurant cooking a fresh batch of soup for every single customer, versus making a big pot once and serving bowls from it all day, only cooking a fresh batch when it actually starts running low. Static pages and cached responses mean most visitors are just getting a bowl from the pot that's already made fast, cheap, and consistent while ISR makes sure that pot gets quietly refreshed in the background instead of going stale.
+
+## Security and Reliability, Built In by Default
+
+The same [Fishtank guide](https://www.getfishtank.com/insights/what-is-vercel) notes that Vercel provides a built-in security layer as a standard part of the platform automatic HTTPS with free SSL certificates, DDoS protection described as mitigating billions of malicious requests weekly, and a customizable Web Application Firewall. The appeal here is less about any single feature and more about what it replaces: the same guide points out plainly that keeping infrastructure secure and scalable normally requires continuous monitoring, maintenance, and a dedicated team of experienced engineers work that Vercel is explicitly designed to absorb on your behalf, so an individual developer or small team doesn't have to become infrastructure security experts just to ship a website.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=Push+Code%2C+Let+the+Platform+Worry"
+  alt="Closing illustration representing Vercel handling infrastructure so developers don't have to"
+/>
+
+## Putting It Together
+
+None of the individual pieces here are exotic inventions. A CDN is old technology. Serverless functions have existed for years. Even the AWS Lambda streaming workaround is, at its core, just clever request-forwarding. What makes Vercel's platform genuinely impressive isn't any single piece it's how invisibly all of them cooperate: a build step that automatically sorts your code into the right category, a global network that always finds the nearest door in for a visitor, and two different kinds of functions, each quietly picked for the job it's actually good at, so that a developer just writes code and pushes it, and the platform handles the hundred small decisions in between.
+
+## What This Means Going Forward
+
+As frameworks lean further into things like AI-generated responses, real-time collaboration, and increasingly personalized pages rendered per-visitor, the pressure on this kind of infrastructure only grows more requests need edge-level decisions, more responses need to stream instead of arriving all at once, and more of the "should this run centrally or right next to the user" decisions need to happen automatically rather than being left to a developer to configure by hand. The lesson underneath Vercel's story isn't really about serverless functions or CDNs specifically. It's the same one running through every platform in this series: the parts that feel effortless to the end user are almost always the parts an engineering team spent the most effort making invisible.
