@@ -78,17 +78,22 @@ export const Navbar = () => {
             <GithubIcon className="text-muted" />
           </Link>
           <ThemeSwitch />
+          <NextLink href="/login">
+            <Button size="sm" variant="primary">
+              Login
+            </Button>
+          </NextLink>
           <div className="hidden md:flex ml-2">
-            <a 
-              href="https://www.buymeacoffee.com/udthedeveloper" 
-              target="_blank" 
+            <a
+              href="https://www.buymeacoffee.com/udthedeveloper"
+              target="_blank"
               rel="noopener noreferrer"
               className="hover:opacity-90 transition-opacity"
             >
-              <img 
-                src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=udthedeveloper&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" 
-                alt="Buy me a coffee" 
-                style={{ height: '40px', width: '170px' }} 
+              <img
+                src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=udthedeveloper&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"
+                alt="Buy me a coffee"
+                style={{ height: "40px", width: "170px" }}
               />
             </a>
           </div>
@@ -103,6 +108,11 @@ export const Navbar = () => {
           >
             <GithubIcon className="text-muted" />
           </Link>
+          <NextLink href="/login">
+            <Button size="sm" variant="primary">
+              Login
+            </Button>
+          </NextLink>
           <ThemeSwitch />
           <button
             aria-expanded={isMenuOpen}

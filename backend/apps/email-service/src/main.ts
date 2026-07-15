@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { EmailServiceModule } from './email-service.module';
 import { RmqService } from '@app/shared';
