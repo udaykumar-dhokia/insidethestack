@@ -17,17 +17,6 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('InsideTheStack API')
-    .setDescription(
-      `## InsideTheStack REST API\n\n` +
-        `Central API gateway for the InsideTheStack platform.\n\n` +
-        `### Auth flow (OTP-based signup)\n` +
-        `1. **POST /auth/signup** — Submit user details → receive OTP via email\n` +
-        `2. **POST /auth/verify-otp** — Submit email + OTP → account created\n\n` +
-        `### Notes\n` +
-        `- OTPs expire after **10 minutes**\n` +
-        `- All passwords are hashed with **bcrypt (cost 12)** before storage\n` +
-        `- Email delivery is handled asynchronously via **RabbitMQ**`,
-    )
     .setVersion('1.0')
     .setContact('udthedeveloper', 'https://linkedin.com/in/udthedeveloper', '')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
@@ -35,6 +24,7 @@ async function bootstrap() {
       `http://localhost:${process.env.PORT ?? 3000}`,
       'Local development',
     )
+    .addBearerAuth()
     .addTag('Auth', 'User registration and authentication endpoints')
     .addTag('General', 'Health checks and utility endpoints')
     .build();

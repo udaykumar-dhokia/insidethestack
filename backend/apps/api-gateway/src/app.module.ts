@@ -1,16 +1,20 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './shared/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule } from '@nestjs/config';
 import { RmqModule } from '@app/shared';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    PrismaModule,
-    AuthModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     RmqModule.register({ name: 'EMAIL_SERVICE', queue: 'email_queue' }),
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

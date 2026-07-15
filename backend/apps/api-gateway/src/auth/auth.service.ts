@@ -7,11 +7,14 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../shared/prisma.service';
 import { SignupInitiateDto } from './dto/signup-initiate.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { LoginDto } from './dto/login.dto';
 
 const OTP_TTL_MINUTES = 10;
 
@@ -19,6 +22,7 @@ const OTP_TTL_MINUTES = 10;
 export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
+    private readonly jwtService: JwtService,
     @Inject('EMAIL_SERVICE') private readonly clientProxy: ClientProxy,
   ) {}
 
@@ -133,31 +137,49 @@ export class AuthService {
       first_name: user.first_name,
     });
 
-    return { message: 'Account created successfully. Welcome!', user };
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+    };
+    const access_token = await this.jwtService.signAsync(payload);
+
+    return {
+      message: 'Account created successfully. Welcome!',
+      user,
+      access_token,
+    };
   }
 
-  async create(data: import('./dto/create-user.dto').CreateUserDto) {
-    const existing = await this.prismaService.user.findUnique({
+  async login(data: LoginDto) {
+    const user = await this.prismaService.user.findUnique({
       where: { email: data.email },
     });
-    if (existing) {
-      throw new ConflictException('Email already registered');
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password.');
     }
-    const passwordHash = await bcrypt.hash(data.password, 12);
-    const user = await this.prismaService.user.create({
-      data: {
-        email: data.email,
-        password: passwordHash,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        username: data.username,
+
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+
+    const payload = { sub: user.id, username: user.username, email: user.email };
+    const access_token = await this.jwtService.signAsync(payload);
+
+    return {
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        isEmailVerified: user.isEmailVerified,
       },
-    });
-    this.clientProxy.emit('user.created', {
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-    });
-    return user;
+      access_token,
+    };
   }
 }

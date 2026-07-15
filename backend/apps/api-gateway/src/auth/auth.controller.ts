@@ -6,32 +6,21 @@ import {
   ApiCreatedResponse,
   ApiGoneResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from './dto/create-user.dto';
+
 import { SignupInitiateDto } from './dto/signup-initiate.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @Post()
-  @ApiOperation({
-    summary: '[Legacy] Create user directly',
-    description:
-      'Creates a user account immediately without email verification. **Deprecated** — prefer the OTP-based flow.',
-    deprecated: true,
-  })
-  @ApiCreatedResponse({ description: 'User created successfully.' })
-  @ApiConflictResponse({ description: 'Email is already registered.' })
-  @ApiBadRequestResponse({ description: 'Validation error in request body.' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create(createUserDto);
-  }
 
   @Post('signup')
   @HttpCode(HttpStatus.ACCEPTED)
@@ -78,6 +67,7 @@ export class AuthController {
           isEmailVerified: true,
           created_at: '2026-07-15T12:00:00.000Z',
         },
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR...',
       },
     },
   })
@@ -90,5 +80,34 @@ export class AuthController {
   })
   verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyOtp(dto);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Login with email and password',
+    description: 'Authenticates a user and returns a JWT access token.',
+  })
+  @ApiOkResponse({
+    description: 'Login successful.',
+    schema: {
+      example: {
+        message: 'Login successful',
+        user: {
+          id: 'uuid',
+          email: 'john@example.com',
+          first_name: 'John',
+          last_name: 'Doe',
+          username: 'johndoe',
+          isEmailVerified: true,
+        },
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR...',
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid email or password.' })
+  @ApiBadRequestResponse({ description: 'Validation error in request body.' })
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 }
