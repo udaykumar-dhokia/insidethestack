@@ -16,6 +16,8 @@ enum Category {
   AI
   DEVELOPER_TOOLS
   CLOUD
+  PRODUCTIVITY
+  DEVOPS_INFRASTRUCTURE
 }
 
 model User {
@@ -56,8 +58,16 @@ model Posts {
   user_id String
   user    User   @relation(fields: [user_id], references: [id])
 
-  category Category
-  content  String
+  category    Category
+  subCategory String?
+  
+  title       String
+  description String
+  slug        String   @unique
+  image       String?
+  platformUrl String?
+  content     String
+  published_at DateTime?
 
   likes_count Int        @default(0)
   comments    Comments[]

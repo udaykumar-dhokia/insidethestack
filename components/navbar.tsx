@@ -1,23 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Kbd, Link, TextField, InputGroup } from "@heroui/react";
+import {
+  Button,
+  Kbd,
+  Link,
+  TextField,
+  InputGroup,
+  Avatar,
+  Dropdown,
+  Label,
+  Skeleton,
+} from "@heroui/react";
 import NextLink from "next/link";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  TwitterIcon,
-  GithubIcon,
-  DiscordIcon,
-  HeartFilledIcon,
-  SearchIcon,
-  Logo,
-} from "@/components/icons";
+import { TwitterIcon, GithubIcon, SearchIcon } from "@/components/icons";
+import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
+import { logout } from "@/lib/store/slices/authSlice";
+import { useGetMeQuery } from "@/lib/store/api/authApi";
+import { SignOutIcon, UserIcon } from "@phosphor-icons/react";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  const isLoadingUser = isAuthenticated && !user;
+
+  useGetMeQuery(undefined, {
+    skip: !isLoadingUser,
+  });
 
   const searchInput = (
     <TextField aria-label="Search" type="search">
@@ -35,6 +50,48 @@ export const Navbar = () => {
       </InputGroup>
     </TextField>
   );
+
+  const getInitials = (name?: string) => {
+    if (!name) return "";
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const UserMenu = () => {
+    if (isLoadingUser) {
+      return <Skeleton className="h-8 w-8 rounded-full" />;
+    }
+
+    return (
+      <Dropdown>
+        <Dropdown.Trigger className="rounded-full outline-none">
+          <button aria-label="User menu" className="cursor-pointer">
+            <Avatar size="sm" color="accent" className="transition-transform">
+              <Avatar.Fallback>{getInitials(user?.username)}</Avatar.Fallback>
+            </Avatar>
+          </button>
+        </Dropdown.Trigger>
+        <Dropdown.Popover placement="bottom end" className="min-w-[200px]">
+          <Dropdown.Menu
+            onAction={(key) => {
+              if (key === "logout") dispatch(logout());
+            }}
+          >
+            <Dropdown.Item id="account" href="/account" textValue="Account">
+              <Label className="flex items-center gap-2">
+                <UserIcon /> Account
+              </Label>
+            </Dropdown.Item>
+            <Dropdown.Item id="logout" textValue="Log Out" variant="danger">
+              <Label className="flex items-center gap-2">
+                <SignOutIcon />
+                Log Out
+              </Label>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    );
+  };
 
   return (
     <nav className="sticky top-0 z-40 w-full border-b border-separator bg-background/70 backdrop-blur-lg">
@@ -78,11 +135,19 @@ export const Navbar = () => {
             <GithubIcon className="text-muted" />
           </Link>
           <ThemeSwitch />
-          <NextLink href="/login">
-            <Button size="sm" variant="primary">
-              Login
-            </Button>
-          </NextLink>
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3 ml-2">
+              <UserMenu />
+            </div>
+          ) : (
+            <NextLink href="/login">
+              <Button size="sm" variant="primary">
+                Login
+              </Button>
+            </NextLink>
+          )}
+
           <div className="hidden md:flex ml-2">
             <a
               href="https://www.buymeacoffee.com/udthedeveloper"
@@ -108,11 +173,17 @@ export const Navbar = () => {
           >
             <GithubIcon className="text-muted" />
           </Link>
-          <NextLink href="/login">
-            <Button size="sm" variant="primary">
-              Login
-            </Button>
-          </NextLink>
+
+          {isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <NextLink href="/login">
+              <Button size="sm" variant="primary">
+                Login
+              </Button>
+            </NextLink>
+          )}
+
           <ThemeSwitch />
           <button
             aria-expanded={isMenuOpen}

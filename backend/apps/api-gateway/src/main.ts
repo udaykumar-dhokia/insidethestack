@@ -15,6 +15,13 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
+
   const config = new DocumentBuilder()
     .setTitle('InsideTheStack API')
     .setVersion('1.0')

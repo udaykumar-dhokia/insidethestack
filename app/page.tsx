@@ -1,6 +1,8 @@
+
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
+import { ArrowUpRight } from "@/components/phosphor";
 import { getAllArticles } from "@/lib/articles";
 import NextLink from "next/link";
 
@@ -29,7 +31,7 @@ export default function Home() {
           rel="noopener noreferrer"
           target="_blank"
         >
-          Explore Articles
+          Explore Articles <ArrowUpRight size={32} />
         </a>
         <a
           className="button button--tertiary button--md rounded-full"
