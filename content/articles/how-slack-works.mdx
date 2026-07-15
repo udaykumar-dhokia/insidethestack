@@ -13,12 +13,7 @@ You type a message in a channel with 10,000 members, hit enter, and somewhere be
 
 That "it just appears" feeling is one of the harder problems in distributed systems, dressed up as something completely unremarkable. This article walks through how Slack actually pulls it off the persistent connections, the servers whose entire job is just deciding who should hear about a message, and a surprisingly fun origin story that shaped the whole thing. Most of the technical detail here comes straight from Slack's own engineering blog, so we're hearing a lot of this directly from the people who built it.
 
-<img
-  src="/slack.png"
-  alt="Slack architecture diagram showing Channel Servers, Gateway Servers, and WebSocket connections"
-  title="How Slack's real-time messaging architecture works"
-  loading="lazy"
-/>
+![Slack architecture diagram showing Channel Servers, Gateway Servers, and WebSocket connections](/slack.png)
 
 ## It Started as a Video Game
 
