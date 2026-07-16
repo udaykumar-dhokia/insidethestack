@@ -24,23 +24,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const keywords = ["Software Architecture", "System Design", "Engineering Case Study"];
+  if (article.meta.category) keywords.push(article.meta.category);
+  if (article.meta.subCategory) keywords.push(article.meta.subCategory);
+
   return {
-    title: article.meta.title,
+    title: `${article.meta.title} | InsideTheStack`,
     description: article.meta.description,
+    keywords: keywords,
     alternates: {
-      canonical: `/articles/${article.slug}`,
+      canonical: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
     },
     openGraph: {
-      title: article.meta.title,
+      title: `${article.meta.title} | InsideTheStack`,
       description: article.meta.description,
       type: 'article',
-      publishedTime: article.meta.date,
-      images: article.meta.image ? [article.meta.image] : [],
+      url: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+      publishedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
+      modifiedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
+      authors: ['https://github.com/udaykumar-dhokia'],
+      images: article.meta.image ? [{ url: article.meta.image, alt: article.meta.title }] : [],
     },
     twitter: {
       card: 'summary_large_image',
-      title: article.meta.title,
+      title: `${article.meta.title} | InsideTheStack`,
       description: article.meta.description,
+      creator: '@udaykumardhokia',
       images: article.meta.image ? [article.meta.image] : [],
     },
   };
@@ -103,16 +112,60 @@ export default async function ArticlePage({ params }: Props) {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: article.meta.title,
-    description: article.meta.description,
-    image: article.meta.image ? [article.meta.image] : [],
-    datePublished: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
-    author: [{
-      '@type': 'Person',
-      name: article.meta.author || 'udthedeveloper',
-      url: 'https://linkedin.com/in/udthedeveloper',
-    }],
+    '@graph': [
+      {
+        '@type': 'TechArticle',
+        '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#article`,
+        headline: article.meta.title,
+        description: article.meta.description,
+        image: article.meta.image ? [article.meta.image] : [],
+        datePublished: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
+        dateModified: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
+        mainEntityOfPage: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+        author: {
+          '@type': 'Person',
+          name: article.meta.author || 'udthedeveloper',
+          url: 'https://github.com/udaykumar-dhokia',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'InsideTheStack',
+          url: 'https://udaykumar-dhokia.github.io/insidethestack',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://udaykumar-dhokia.github.io/insidethestack/favicon.ico'
+          }
+        },
+        about: [
+          article.meta.category ? { '@type': 'Thing', name: article.meta.category } : undefined,
+          article.meta.subCategory ? { '@type': 'Thing', name: article.meta.subCategory } : undefined,
+        ].filter(Boolean)
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#breadcrumb`,
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://udaykumar-dhokia.github.io/insidethestack',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Articles',
+            item: 'https://udaykumar-dhokia.github.io/insidethestack/articles',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: article.meta.title,
+            item: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+          },
+        ],
+      }
+    ]
   };
 
   return (

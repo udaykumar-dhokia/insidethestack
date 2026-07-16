@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import { Article } from "@/lib/articles";
 
 import NextLink from "next/link";
@@ -15,7 +15,12 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
   const searchParams = useSearchParams();
   const category = searchParams.get("category");
   const subCategory = searchParams.get("subCategory");
-  const [searchQuery, setSearchQuery] = useState("");
+  
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("query") || "");
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("query") || "");
+  }, [searchParams]);
 
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {

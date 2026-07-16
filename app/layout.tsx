@@ -13,12 +13,29 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://udaykumar-dhokia.github.io/insidethestack"),
   title: {
     default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: ["Software Architecture", "System Design", "Developer Tools", "AI Architecture", "Next.js"],
-  authors: [{ name: "udthedeveloper" }],
+  keywords: [
+    "Software Architecture",
+    "System Design",
+    "Developer Tools",
+    "AI Architecture",
+    "Next.js",
+    "Infrastructure",
+    "Distributed Systems",
+    "Scalability",
+    "Tech Stack Deep Dives",
+    "Cloud Architecture"
+  ],
+  authors: [{ name: "udthedeveloper", url: "https://github.com/udaykumar-dhokia" }],
   creator: "udthedeveloper",
+  publisher: "InsideTheStack",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -26,15 +43,37 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: siteConfig.name,
     description: siteConfig.description,
+    images: [
+      {
+        url: "/favicon.ico",
+        width: 32,
+        height: 32,
+        alt: "InsideTheStack Logo",
+      }
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    creator: "@udthedeveloper",
+    creator: "@udaykumardhokia",
+    images: ["/favicon.ico"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 

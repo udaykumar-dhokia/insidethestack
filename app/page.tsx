@@ -7,18 +7,65 @@ import { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
+  title: "InsideTheStack - Discover Software Architecture & System Design",
+  description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
   alternates: {
-    canonical: "/",
+    canonical: "https://udaykumar-dhokia.github.io/insidethestack",
   },
+  openGraph: {
+    title: "InsideTheStack - Discover Software Architecture & System Design",
+    description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
+    url: "https://udaykumar-dhokia.github.io/insidethestack",
+    type: "website",
+  },
+  twitter: {
+    title: "InsideTheStack - Discover Software Architecture & System Design",
+    description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
+  }
 };
 
 export default function Home() {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: siteConfig.name,
-    url: 'https://udaykumar-dhokia.github.io/insidethestack',
-    description: siteConfig.description,
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#website',
+        url: 'https://udaykumar-dhokia.github.io/insidethestack',
+        name: 'InsideTheStack',
+        description: siteConfig.description,
+        publisher: {
+          '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#organization'
+        },
+        potentialAction: [
+          {
+            '@type': 'SearchAction',
+            target: {
+              '@type': 'EntryPoint',
+              urlTemplate: 'https://udaykumar-dhokia.github.io/insidethestack/articles?query={search_term_string}'
+            },
+            'query-input': 'required name=search_term_string'
+          }
+        ],
+        inLanguage: 'en-US'
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#organization',
+        name: 'InsideTheStack',
+        url: 'https://udaykumar-dhokia.github.io/insidethestack',
+        logo: {
+          '@type': 'ImageObject',
+          '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#logo',
+          url: 'https://udaykumar-dhokia.github.io/insidethestack/favicon.ico',
+          caption: 'InsideTheStack'
+        },
+        sameAs: [
+          siteConfig.links.github,
+          siteConfig.links.twitter
+        ]
+      }
+    ]
   };
 
   return (
@@ -60,7 +107,24 @@ export default function Home() {
         </a>
       </div>
 
-      <div className="mt-20 w-full">
+      <div className="mt-16 max-w-4xl text-left flex flex-col gap-6 text-lg text-muted-foreground">
+        <p>
+          Welcome to <strong>InsideTheStack</strong>, your premier destination to discover how the world's biggest software platforms are built. 
+          Understanding the architecture and system design of massively successful products is the key to leveling up as a software engineer.
+        </p>
+        <p>
+          Whether you are preparing for a system design interview, building scalable microservices, or simply curious about the infrastructure 
+          choices made by engineering teams at companies like Netflix, WhatsApp, Stripe, and Vercel, you will find comprehensive deep dives here. 
+          We break down complex engineering concepts into digestible, actionable insights.
+        </p>
+        <p>
+          Our mission is to demystify software architecture. We explore the tradeoffs behind different databases, the nuances of distributed systems, 
+          and the evolution of tech stacks over time. Dive into our latest articles below to explore how industry-leading platforms tackle 
+          unprecedented scale and reliability challenges every single day.
+        </p>
+      </div>
+
+      <div className="mt-16 w-full">
         <h2 className="text-2xl font-bold mb-8 text-left border-b border-divider pb-2">
           Recent Articles
         </h2>
