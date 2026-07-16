@@ -11,8 +11,10 @@ import {
   handleImageDrop,
   useEditor,
 } from "novel";
-import { useState } from "react";
-import { Modal, TextField, Label, Input, Button } from "@heroui/react";
+import { useState, useRef } from "react";
+import { Modal, TextField, Label, Input, Button, Spinner } from "@heroui/react";
+import { addToast } from "@heroui/toast";
+import { useUploadImageMutation } from "@/lib/store/api/uploadApi";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "novel";
 import { Markdown } from "tiptap-markdown";
@@ -34,31 +36,13 @@ import {
   TextHTwo,
   TextHThree,
   CodeBlock,
+  Image as ImageIcon,
+  Gear,
+  PaperPlaneRight,
+  UploadIcon,
 } from "@phosphor-icons/react";
 
 const lowlight = createLowlight(common);
-
-// Image upload handler — converts to base64 data URL (no backend needed)
-const uploadFn = createImageUpload({
-  onUpload: async (file: File) => {
-    return new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
-  },
-  validateFn: (file: File) => {
-    if (!file.type.includes("image/")) {
-      return false;
-    }
-    if (file.size / 1024 / 1024 > 10) {
-      return false;
-    }
-    return true;
-  },
-});
 
 const extensions = [
   StarterKit.configure({
@@ -100,6 +84,8 @@ const extensions = [
 interface TailwindEditorProps {
   initialValue?: any;
   onChange: (value: string) => void;
+  onImageUpload?: (publicId: string, url: string) => void;
+  onPublishClick?: () => void;
 }
 
 function BubbleButton({
@@ -140,9 +126,9 @@ function EditorMenu() {
   const { editor } = useEditor();
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
-  
+
   if (!editor) return null;
-  
+
   return (
     <>
       <EditorBubble
@@ -156,7 +142,9 @@ function EditorMenu() {
       >
         <BubbleButton
           isActive={editor.isActive("heading", { level: 1 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
           title="Heading 1"
         >
           <TextHOne size={18} weight="bold" />
@@ -164,7 +152,9 @@ function EditorMenu() {
 
         <BubbleButton
           isActive={editor.isActive("heading", { level: 2 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           title="Heading 2"
         >
           <TextHTwo size={18} weight="bold" />
@@ -172,7 +162,9 @@ function EditorMenu() {
 
         <BubbleButton
           isActive={editor.isActive("heading", { level: 3 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
           title="Heading 3"
         >
           <TextHThree size={18} weight="bold" />
@@ -274,7 +266,10 @@ function EditorMenu() {
       </EditorBubble>
 
       {/* Link Modal */}
-      <Modal.Backdrop isOpen={isLinkModalOpen} onOpenChange={setIsLinkModalOpen}>
+      <Modal.Backdrop
+        isOpen={isLinkModalOpen}
+        onOpenChange={setIsLinkModalOpen}
+      >
         <Modal.Container>
           <Modal.Dialog className="max-w-[400px]">
             <Modal.CloseTrigger />
@@ -288,7 +283,7 @@ function EditorMenu() {
                 value={linkUrl}
                 onChange={setLinkUrl}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && linkUrl) {
+                  if (e.key === "Enter" && linkUrl) {
                     e.preventDefault();
                     editor.chain().focus().setLink({ href: linkUrl }).run();
                     setIsLinkModalOpen(false);
@@ -301,10 +296,14 @@ function EditorMenu() {
               </TextField>
             </Modal.Body>
             <Modal.Footer>
-              <Button slot="close" variant="secondary" onPress={() => setLinkUrl("")}>
+              <Button
+                slot="close"
+                variant="secondary"
+                onPress={() => setLinkUrl("")}
+              >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onPress={() => {
                   if (linkUrl) {
                     editor.chain().focus().setLink({ href: linkUrl }).run();
@@ -323,17 +322,150 @@ function EditorMenu() {
   );
 }
 
-export default function TailwindEditor({ initialValue, onChange }: TailwindEditorProps) {
+function EditorToolbar({
+  uploadMutation,
+  onImageUpload,
+  editorInstance,
+  onPublishClick,
+}: {
+  uploadMutation: any;
+  onImageUpload?: (publicId: string, url: string) => void;
+  editorInstance: any;
+  onPublishClick?: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!editorInstance) {
+      addToast({
+        title: "Editor Not Ready",
+        description: "Please wait.",
+        color: "warning",
+      });
+      return;
+    }
+    const file = e.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        setIsUploading(true);
+        const result = await uploadMutation(formData).unwrap();
+        if (onImageUpload) onImageUpload(result.public_id, result.url);
+        editorInstance.chain().focus().setImage({ src: result.url }).run();
+      } catch (err: any) {
+        console.error(err);
+        addToast({
+          title: "Upload Failed",
+          description:
+            "Failed to upload image. Please check your connection and Cloudinary credentials.",
+          color: "danger",
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const baseButtonClass =
+    "group relative flex items-center justify-center w-14 h-14 rounded-full bg-content2/80 backdrop-blur-md border border-divider shadow-lg hover:border-primary hover:text-primary transition-all duration-300 disabled:opacity-50";
+
+  return (
+    <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 flex flex-col gap-3 z-50">
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isUploading}
+        className={`${baseButtonClass} cursor-pointer`}
+        title="Insert Image"
+        type="button"
+      >
+        {isUploading ? (
+          <Spinner size="sm" />
+        ) : (
+          <ImageIcon size={24} weight="regular" />
+        )}
+      </button>
+
+      <button
+        onClick={onPublishClick}
+        className={`${baseButtonClass} cursor-pointer`}
+        title="Settings"
+        type="button"
+      >
+        <Gear size={24} weight="regular" />
+      </button>
+
+      <button
+        onClick={onPublishClick}
+        className={`${baseButtonClass} cursor-pointer !bg-primary text-primary-foreground hover:!text-primary-foreground hover:opacity-90`}
+        title="Publish"
+        type="button"
+      >
+        <UploadIcon size={24} weight="fill" />
+      </button>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageInput}
+      />
+    </div>
+  );
+}
+
+export default function TailwindEditor({
+  initialValue,
+  onChange,
+  onImageUpload,
+  onPublishClick,
+}: TailwindEditorProps) {
+  const [uploadImageMutation] = useUploadImageMutation();
+  const [editorInstance, setEditorInstance] = useState<any>(null);
+
+  const uploadFn = createImageUpload({
+    onUpload: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const result = await uploadImageMutation(formData).unwrap();
+        if (onImageUpload) {
+          onImageUpload(result.public_id, result.url);
+        }
+        return result.url;
+      } catch (e) {
+        console.error("Upload failed", e);
+        throw e;
+      }
+    },
+    validateFn: (file: File) => {
+      if (!file.type.includes("image/")) return false;
+      if (file.size / 1024 / 1024 > 10) return false;
+      return true;
+    },
+  });
+
   return (
     <EditorRoot>
+      <EditorToolbar
+        uploadMutation={uploadImageMutation}
+        onImageUpload={onImageUpload}
+        editorInstance={editorInstance}
+        onPublishClick={onPublishClick}
+      />
       <EditorContent
         className="prose dark:prose-invert max-w-none w-full min-h-[60vh] focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[60vh] prose-p:m-0 prose-p:mb-2"
         extensions={extensions as any}
         initialContent={initialValue}
         immediatelyRender={false}
+        onCreate={({ editor }) => {
+          setEditorInstance(editor);
+        }}
         editorProps={{
-          handlePaste: (view, event) =>
-            handleImagePaste(view, event, uploadFn),
+          handlePaste: (view, event) => handleImagePaste(view, event, uploadFn),
           handleDrop: (view, event, _slice, moved) =>
             handleImageDrop(view, event, moved, uploadFn),
           attributes: {

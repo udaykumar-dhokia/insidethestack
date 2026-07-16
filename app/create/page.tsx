@@ -12,11 +12,15 @@ import {
   Label,
   Drawer,
   Spinner,
+  toast,
 } from "@heroui/react";
-import { addToast } from "@heroui/toast";
 import type { Key } from "@heroui/react";
 import TailwindEditor from "@/components/editor";
 import { useCreateArticleMutation } from "@/lib/store/api/articlesApi";
+import {
+  useUploadImageMutation,
+  useCleanupImagesMutation,
+} from "@/lib/store/api/uploadApi";
 import { useAppSelector } from "@/lib/store/hooks";
 import { ImageIcon, X, UploadSimple, UploadIcon } from "@phosphor-icons/react";
 
@@ -35,6 +39,13 @@ export default function CreatePostPage() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [createArticle, { isLoading }] = useCreateArticleMutation();
+  const [uploadImageMutation, { isLoading: isUploadingCover }] =
+    useUploadImageMutation();
+  const [cleanupImagesMutation] = useCleanupImagesMutation();
+
+  const [uploadedImages, setUploadedImages] = useState<
+    { url: string; publicId: string }[]
+  >([]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -73,29 +84,42 @@ export default function CreatePostPage() {
   };
 
   // Cover image handling
-  const handleCoverFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) {
-      addToast({
-        title: "Invalid file",
-        description: "Please upload an image file.",
-        color: "danger",
-      });
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      addToast({
-        title: "File too large",
-        description: "Cover image must be under 10MB.",
-        color: "danger",
-      });
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImage(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+  const handleCoverFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast("Invalid file", {
+          description: "Please upload an image file.",
+          variant: "danger",
+        });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast("File too large", {
+          description: "Cover image must be under 10MB.",
+          variant: "danger",
+        });
+        return;
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await uploadImageMutation(formData).unwrap();
+        setImage(res.url);
+        setUploadedImages((prev) => [
+          ...prev,
+          { url: res.url, publicId: res.public_id },
+        ]);
+      } catch (e) {
+        console.error(e);
+        toast("Upload Failed", {
+          description: "Could not upload the cover image.",
+          variant: "danger",
+        });
+      }
+    },
+    [uploadImageMutation],
+  );
 
   const handleCoverDrop = useCallback(
     (e: React.DragEvent) => {
@@ -118,34 +142,30 @@ export default function CreatePostPage() {
 
   const handlePublish = async () => {
     if (!title) {
-      addToast({
-        title: "Missing title",
+      toast("Missing title", {
         description: "Please add a title to your post.",
-        color: "danger",
+        variant: "danger",
       });
       return;
     }
     if (!content) {
-      addToast({
-        title: "Missing content",
+      toast("Missing content", {
         description: "Please write some content.",
-        color: "danger",
+        variant: "danger",
       });
       return;
     }
     if (!description) {
-      addToast({
-        title: "Missing description",
+      toast("Missing description", {
         description: "Please add a short description.",
-        color: "danger",
+        variant: "danger",
       });
       return;
     }
     if (!category) {
-      addToast({
-        title: "Missing category",
+      toast("Missing category", {
         description: "Please select a category.",
-        color: "danger",
+        variant: "danger",
       });
       return;
     }
@@ -163,19 +183,27 @@ export default function CreatePostPage() {
 
       const result = await createArticle(payload).unwrap();
 
-      addToast({
-        title: "Published!",
+      const unusedImageIds = uploadedImages
+        .filter((img) => img.url !== image && !content.includes(img.url))
+        .map((img) => img.publicId);
+
+      if (unusedImageIds.length > 0) {
+        cleanupImagesMutation({ publicIds: unusedImageIds }).catch(
+          console.error,
+        );
+      }
+
+      toast("Published!", {
         description: "Your post is now live.",
-        color: "success",
+        variant: "success",
       });
 
       router.push(`/article/${result.slug}`);
     } catch (error) {
       console.error(error);
-      addToast({
-        title: "Error",
+      toast("Error", {
         description: "Failed to publish. Please try again.",
-        color: "danger",
+        variant: "danger",
       });
     }
   };
@@ -199,11 +227,10 @@ export default function CreatePostPage() {
               variant="primary"
               onPress={() => {
                 if (!title || !content) {
-                  addToast({
-                    title: "Not ready",
+                  toast("Not ready", {
                     description:
                       "Please add a title and some content before publishing.",
-                    color: "warning",
+                    variant: "warning",
                   });
                   return;
                 }
@@ -286,7 +313,24 @@ export default function CreatePostPage() {
 
         {/* Editor */}
         <div className="mt-4">
-          <TailwindEditor onChange={setContent} />
+          <TailwindEditor
+            initialValue={content}
+            onChange={setContent}
+            onImageUpload={(publicId, url) => {
+              setUploadedImages((prev) => [...prev, { url, publicId }]);
+            }}
+            onPublishClick={() => {
+              if (!title || !content) {
+                toast("Not ready", {
+                  description:
+                    "Please add a title and some content before publishing.",
+                  variant: "warning",
+                });
+                return;
+              }
+              setIsPublishOpen(true);
+            }}
+          />
         </div>
       </main>
 

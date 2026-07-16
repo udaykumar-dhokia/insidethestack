@@ -7,6 +7,7 @@ import { RmqModule } from '@app/shared';
 import { UsersModule } from './users/users.module';
 import { ArticlesModule } from './articles/articles.module';
 import { LikesModule } from './likes/likes.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LikesModule } from './likes/likes.module';
     UsersModule,
     ArticlesModule,
     LikesModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
