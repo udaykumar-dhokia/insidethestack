@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { EmailServiceService, SendOtpPayload } from './email-service.service';
 import { RmqService } from '@app/shared';
@@ -9,6 +9,11 @@ export class EmailServiceController {
     private readonly emailServiceService: EmailServiceService,
     private readonly rmqService: RmqService,
   ) {}
+
+  @Get('/')
+  healthCheck() {
+    return { status: 'ok', service: 'email-service' };
+  }
 
   @EventPattern('send_otp_email')
   async handleSendOtpEmail(
