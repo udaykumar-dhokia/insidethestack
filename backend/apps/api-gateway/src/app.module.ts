@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { RmqModule } from '@app/shared';
 import { UsersModule } from './users/users.module';
+import { ArticlesModule } from './articles/articles.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { UsersModule } from './users/users.module';
     RmqModule.register({ name: 'EMAIL_SERVICE', queue: 'email_queue' }),
     AuthModule,
     UsersModule,
+    ArticlesModule,
+    LikesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

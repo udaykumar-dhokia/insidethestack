@@ -10,16 +10,28 @@ import {
   TextField,
 } from "@heroui/react";
 import NextLink from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSignupMutation, useVerifyOtpMutation } from "@/lib/store/api/authApi";
+import {
+  useSignupMutation,
+  useVerifyOtpMutation,
+  useLazyCheckUsernameQuery,
+} from "@/lib/store/api/authApi";
 
 export default function SignupPage() {
   const router = useRouter();
   const [step, setStep] = useState<"signup" | "otp">("signup");
-  
-  const [signup, { isLoading: isSigningUp, error: signupError }] = useSignupMutation();
-  const [verifyOtp, { isLoading: isVerifying, error: verifyError }] = useVerifyOtpMutation();
+
+  const [signup, { isLoading: isSigningUp, error: signupError }] =
+    useSignupMutation();
+  const [verifyOtp, { isLoading: isVerifying, error: verifyError }] =
+    useVerifyOtpMutation();
+  const [checkUsername, { isFetching: isCheckingUsername }] =
+    useLazyCheckUsernameQuery();
+
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
+    null,
+  );
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -33,6 +45,29 @@ export default function SignupPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  useEffect(() => {
+    if (!formData.username) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    if (formData.username.length < 3) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await checkUsername(formData.username).unwrap();
+        setUsernameAvailable(res.available);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [formData.username, checkUsername]);
 
   const handleSignupSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,15 +119,20 @@ export default function SignupPage() {
             {step === "signup" ? (
               <Form onSubmit={handleSignupSubmit}>
                 <div className="flex flex-col gap-4 w-full">
-                  
                   {signupError && (
                     <div className="p-3 mb-2 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                      {(signupError as any)?.data?.message || "An error occurred during signup"}
+                      {(signupError as any)?.data?.message ||
+                        "An error occurred during signup"}
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-3">
-                    <TextField className="w-full" name="first_name" type="text" isRequired>
+                    <TextField
+                      className="w-full"
+                      name="first_name"
+                      type="text"
+                      isRequired
+                    >
                       <Label className="text-sm font-medium">First name</Label>
                       <Input
                         placeholder="John"
@@ -118,8 +158,25 @@ export default function SignupPage() {
                     </TextField>
                   </div>
 
-                  <TextField className="w-full" name="username" type="text" isRequired>
-                    <Label className="text-sm font-medium">Username</Label>
+                  <TextField
+                    className="w-full"
+                    name="username"
+                    type="text"
+                    isRequired
+                    isInvalid={usernameAvailable === false}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Label className="text-sm font-medium">Username</Label>
+                      {isCheckingUsername && (
+                        <span className="text-xs text-muted">Checking...</span>
+                      )}
+                      {!isCheckingUsername && usernameAvailable === true && (
+                        <span className="text-xs text-success">Available</span>
+                      )}
+                      {!isCheckingUsername && usernameAvailable === false && (
+                        <span className="text-xs text-danger">Taken</span>
+                      )}
+                    </div>
                     <Input
                       placeholder="johndoe"
                       variant="secondary"
@@ -129,7 +186,12 @@ export default function SignupPage() {
                     />
                   </TextField>
 
-                  <TextField className="w-full" name="email" type="email" isRequired>
+                  <TextField
+                    className="w-full"
+                    name="email"
+                    type="email"
+                    isRequired
+                  >
                     <Label className="text-sm font-medium">Email address</Label>
                     <Input
                       placeholder="you@example.com"
@@ -140,7 +202,12 @@ export default function SignupPage() {
                     />
                   </TextField>
 
-                  <TextField className="w-full" name="password" type="password" isRequired>
+                  <TextField
+                    className="w-full"
+                    name="password"
+                    type="password"
+                    isRequired
+                  >
                     <Label className="text-sm font-medium">Password</Label>
                     <Input
                       placeholder="••••••••"
@@ -164,14 +231,19 @@ export default function SignupPage() {
             ) : (
               <Form onSubmit={handleOtpSubmit}>
                 <div className="flex flex-col gap-4 w-full">
-                  
                   {verifyError && (
                     <div className="p-3 mb-2 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                      {(verifyError as any)?.data?.message || "Invalid or expired OTP"}
+                      {(verifyError as any)?.data?.message ||
+                        "Invalid or expired OTP"}
                     </div>
                   )}
 
-                  <TextField className="w-full" name="otp" type="text" isRequired>
+                  <TextField
+                    className="w-full"
+                    name="otp"
+                    type="text"
+                    isRequired
+                  >
                     <Label className="text-sm font-medium">6-Digit Code</Label>
                     <Input
                       placeholder="123456"
@@ -191,7 +263,7 @@ export default function SignupPage() {
                   >
                     {isVerifying ? "Verifying..." : "Verify & Login"}
                   </Button>
-                  
+
                   <Button
                     className="w-full mt-2 text-muted"
                     variant="outline"

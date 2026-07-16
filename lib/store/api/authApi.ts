@@ -26,6 +26,9 @@ export const authApi = baseApi.injectEndpoints({
     getMe: builder.query({
       query: () => "/users/me",
     }),
+    checkUsername: builder.query<{ available: boolean }, string>({
+      query: (username) => `/users/check-username/${username}`,
+    }),
   }),
 });
 
@@ -35,4 +38,5 @@ export const {
   useVerifyOtpMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useLazyCheckUsernameQuery,
 } = authApi;

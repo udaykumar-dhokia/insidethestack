@@ -25,4 +25,12 @@ export class UsersService {
 
     return user;
   }
+
+  async checkUsername(username: string): Promise<{ available: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true },
+    });
+    return { available: !user };
+  }
 }

@@ -1,4 +1,4 @@
-import { getArticleBySlug, getAllArticles, Article } from '@/lib/articles';
+import { getArticleBySlugFromApi, getArticlesFromApi, Article } from '@/lib/articles';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticleBySlugFromApi(slug);
 
   if (!article) {
     return {
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export async function generateStaticParams() {
-  const articles = getAllArticles();
+  const articles = await getArticlesFromApi();
   return articles.map((article) => ({
     slug: article?.slug,
   }));
@@ -75,14 +75,14 @@ export function extractHeadings(content: string) {
 
 export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticleBySlugFromApi(slug);
 
   if (!article) {
     notFound();
   }
 
   const headings = extractHeadings(article.content);
-  const allArticles = getAllArticles();
+  const allArticles = await getArticlesFromApi();
   
   // Find related articles (same category or subcategory, excluding current)
   const relatedArticles = allArticles
@@ -235,6 +235,7 @@ export default async function ArticlePage({ params }: Props) {
       )}
 
       <FloatingActionButtons 
+        articleId={article.id}
         title={article.meta.title} 
         platformUrl={article.meta.platformUrl} 
       />

@@ -7,6 +7,7 @@ import { GoogleAnalytics } from '@next/third-parties/google';
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://udaykumar-dhokia.github.io/insidethestack"),
@@ -65,17 +66,7 @@ export default function RootLayout({
             <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
               {children}
             </main>
-            <footer className="w-full flex items-center justify-center py-3">
-              <a
-                className="flex items-center gap-1 text-current no-underline"
-                href="https://linkedin.com/in/udthedeveloper"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <span className="text-muted">made by</span>
-                <p className="text-accent">udthedeveloper</p>
-              </a>
-            </footer>
+            <Footer />
           </div>
         </Providers>
         <GoogleAnalytics gaId="G-XPLRX6HBKB" />

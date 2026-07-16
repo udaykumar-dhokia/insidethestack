@@ -4,6 +4,7 @@ import type { ThemeProviderProps } from "next-themes";
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import StoreProvider from "./StoreProvider";
+import { Toast } from "@heroui/react";
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   const orig = console.error;
@@ -25,8 +26,11 @@ export interface ProvidersProps {
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   return (
-    <StoreProvider>
-      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-    </StoreProvider>
+    <>
+      <StoreProvider>
+        <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+      </StoreProvider>
+      <Toast.Provider placement="bottom" />
+    </>
   );
 }

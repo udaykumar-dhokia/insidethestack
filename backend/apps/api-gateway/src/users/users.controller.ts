@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Param } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -14,6 +14,19 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('check-username/:username')
+  @ApiOperation({
+    summary: 'Check if a username is available',
+    description: 'Returns true if the username is available, false if it is already taken.',
+  })
+  @ApiOkResponse({
+    description: 'Username availability checked successfully.',
+    schema: { example: { available: true } },
+  })
+  checkUsername(@Param('username') username: string) {
+    return this.usersService.checkUsername(username);
+  }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)

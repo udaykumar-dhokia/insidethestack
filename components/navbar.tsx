@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
   Kbd,
@@ -17,16 +17,21 @@ import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { TwitterIcon, GithubIcon, SearchIcon } from "@/components/icons";
+import { SearchIcon } from "@/components/icons";
 import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
 import { logout } from "@/lib/store/slices/authSlice";
 import { useGetMeQuery } from "@/lib/store/api/authApi";
-import { SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { PlusIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isLoadingUser = isAuthenticated && !user;
 
@@ -63,12 +68,11 @@ export const Navbar = () => {
 
     return (
       <Dropdown>
-        <Dropdown.Trigger className="rounded-full outline-none">
-          <button aria-label="User menu" className="cursor-pointer">
-            <Avatar size="sm" color="accent" className="transition-transform">
-              <Avatar.Fallback>{getInitials(user?.username)}</Avatar.Fallback>
-            </Avatar>
-          </button>
+        {/* Use Dropdown.Trigger directly — it renders as a button. Do NOT nest another button inside. */}
+        <Dropdown.Trigger className="rounded-full outline-none cursor-pointer">
+          <Avatar size="sm" color="accent" className="transition-transform">
+            <Avatar.Fallback>{getInitials(user?.username)}</Avatar.Fallback>
+          </Avatar>
         </Dropdown.Trigger>
         <Dropdown.Popover placement="bottom end" className="min-w-[200px]">
           <Dropdown.Menu
@@ -90,6 +94,66 @@ export const Navbar = () => {
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
+    );
+  };
+
+  // Render the auth-dependent part only after mount to avoid hydration mismatch
+  const AuthSection = () => {
+    if (!mounted) {
+      // Show a stable placeholder on both server and first client render
+      return (
+        <NextLink href="/login">
+          <Button size="sm" variant="primary">
+            Login
+          </Button>
+        </NextLink>
+      );
+    }
+
+    if (isAuthenticated) {
+      return (
+        <div className="flex items-center gap-3 ml-2">
+          <NextLink href="/create">
+            <Button size="sm" variant="primary">
+              <PlusIcon /> Create Post
+            </Button>
+          </NextLink>
+          <UserMenu />
+        </div>
+      );
+    }
+
+    return (
+      <NextLink href="/login">
+        <Button size="sm" variant="primary">
+          Login
+        </Button>
+      </NextLink>
+    );
+  };
+
+  const MobileAuthSection = () => {
+    if (!mounted) return null;
+
+    if (isAuthenticated) {
+      return (
+        <div className="flex items-center gap-2">
+          <NextLink href="/create">
+            <Button size="sm" variant="outline">
+              Create
+            </Button>
+          </NextLink>
+          <UserMenu />
+        </div>
+      );
+    }
+
+    return (
+      <NextLink href="/login">
+        <Button size="sm" variant="primary">
+          Login
+        </Button>
+      </NextLink>
     );
   };
 
@@ -118,72 +182,12 @@ export const Navbar = () => {
         </div>
 
         <div className="hidden sm:flex items-center gap-2">
-          <Link
-            aria-label="Twitter"
-            href={siteConfig.links.twitter}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <TwitterIcon className="text-muted" />
-          </Link>
-          <Link
-            aria-label="Github"
-            href={siteConfig.links.github}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <GithubIcon className="text-muted" />
-          </Link>
           <ThemeSwitch />
-
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3 ml-2">
-              <UserMenu />
-            </div>
-          ) : (
-            <NextLink href="/login">
-              <Button size="sm" variant="primary">
-                Login
-              </Button>
-            </NextLink>
-          )}
-
-          <div className="hidden md:flex ml-2">
-            <a
-              href="https://www.buymeacoffee.com/udthedeveloper"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-90 transition-opacity"
-            >
-              <img
-                src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=udthedeveloper&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"
-                alt="Buy me a coffee"
-                style={{ height: "40px", width: "170px" }}
-              />
-            </a>
-          </div>
+          <AuthSection />
         </div>
 
         <div className="flex sm:hidden items-center gap-2">
-          <Link
-            aria-label="Github"
-            href={siteConfig.links.github}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <GithubIcon className="text-muted" />
-          </Link>
-
-          {isAuthenticated ? (
-            <UserMenu />
-          ) : (
-            <NextLink href="/login">
-              <Button size="sm" variant="primary">
-                Login
-              </Button>
-            </NextLink>
-          )}
-
+          <MobileAuthSection />
           <ThemeSwitch />
           <button
             aria-expanded={isMenuOpen}
