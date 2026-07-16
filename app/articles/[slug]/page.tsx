@@ -48,6 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export async function generateStaticParams() {
   const articles = await getArticlesFromApi();
+  if (!articles || articles.length === 0) {
+    return [{ slug: 'fallback' }];
+  }
   return articles.map((article) => ({
     slug: article?.slug,
   }));
