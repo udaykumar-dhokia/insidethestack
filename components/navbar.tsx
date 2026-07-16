@@ -80,11 +80,11 @@ export const Navbar = () => {
               if (key === "logout") dispatch(logout());
             }}
           >
-            <Dropdown.Item id="account" href="/account" textValue="Account">
+            {/* <Dropdown.Item id="account" href="/account" textValue="Account">
               <Label className="flex items-center gap-2">
                 <UserIcon /> Account
               </Label>
-            </Dropdown.Item>
+            </Dropdown.Item> */}
             <Dropdown.Item id="logout" textValue="Log Out" variant="danger">
               <Label className="flex items-center gap-2">
                 <SignOutIcon />
