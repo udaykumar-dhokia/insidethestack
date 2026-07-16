@@ -1,0 +1,132 @@
+---
+title: "How Postman Actually Works"
+description: "A deep dive into Postman's architecture from the simple client-server design behind every request you send, to the microservices, Kubernetes migration, and Context Graph powering its newest AI agents."
+date: "2026-07-16"
+author: "udthedeveloper"
+image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtjSKI-SHjW8dRMTUjPB4tKz90Rn9ub2t0sgZYzpGF0Q&s=10"
+category: "Developer Tools"
+subCategory: "Postman"
+---
+
+Before Postman existed, testing an API meant writing a curl command by hand, or building a throwaway script just to check if an endpoint actually worked. It was clunky, easy to get wrong, and nobody enjoyed it. Postman turned that chore into a few clicks: pick a method, paste a URL, hit send, read the response. Something that simple, done well, ended up becoming the place millions of developers now design, test, document, and increasingly, let AI agents interact with APIs.
+
+This article looks at how Postman is actually built from the everyday request you send as a solo developer, to the microservices and infrastructure running behind the scenes at company scale, to the newer AI layer being built on top of all of it. Most of the detail here comes straight from Postman's own engineering blog, so a lot of this is directly from the people building it.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Send%2C+Test%2C+Document%2C+Repeat"
+  alt="Illustration of an API request being sent, tested, and documented"
+/>
+
+## It Started With One Developer's Annoyance
+
+According to an interview with Postman's co-founder and CEO, Abhinav Asthana, on the [Stack Overflow blog](https://stackoverflow.blog/2025/12/04/postman-s-journey-and-unlocking-the-power-of-apis/), Postman began life as a side project built to solve his own personal frustrations with API development, started with just a couple of people sharing code between each other. Asthana himself, in the same interview, credits an unglamorous but important decision for a lot of what came after: keeping the architecture and product as simple as possible, deliberately resisting the urge to bolt on every exciting new framework or technology just because it existed.
+
+That's a genuinely useful lesson buried in a scaling story the same interview notes Postman is now used by millions of developers, but the discipline that got it there wasn't chasing novelty, it was restraint.
+
+## The Simple Version: What Happens When You Hit "Send"
+
+Here's the part every Postman user has done a thousand times without thinking about the machinery behind it. A breakdown on [IGMGuru](https://www.igmguru.com/blog/what-is-postman) walks through the basic architecture: the Postman client acts as the API consumer, letting you define the request method, URL, headers, parameters, authentication, and body. Before that request actually leaves your machine, it passes through a request processing engine, which resolves any variables you've used, applies your chosen authorization, runs any pre-request scripts, and formats the final request making sure everything is valid before it's ever sent to the real API server.
+
+Think of it like a strict but helpful assistant checking your travel documents before you get to the airport. It fills in your frequent flyer number, confirms your ID matches your ticket, double-checks nothing's missing so that by the time you actually reach the counter (the real API server), there's no back-and-forth, just a smooth handoff.
+
+```text
+You hit "Send"
+  → Request Processing Engine resolves variables (e.g. {{base_url}})
+  → Applies auth (API key, OAuth token, etc.)
+  → Runs any pre-request scripts (e.g. generate a fresh timestamp)
+  → Sends the fully formed request to the actual API server
+  → Response comes back: status code, headers, body
+  → Test scripts run automatically against that response
+```
+
+Once a response comes back, the same IGMGuru breakdown notes you can inspect every part of it individually status code, headers, cookies, and body and the scripting and test engine, running on JavaScript, automatically verifies things like status codes and response data against whatever checks you've written. String a bunch of these requests together with the Collection Runner, and you've got an entire workflow tested end-to-end, without touching each request by hand.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Request+In%2C+Validated%2C+Tested%2C+Response+Out"
+  alt="Diagram of the request processing and testing pipeline"
+/>
+
+## Why Postman Cares So Much About Separating "Interface" From "Implementation"
+
+This next idea is a little more abstract, but it's genuinely the philosophical core of why Postman exists as a company at all, not just a tool.
+
+Postman's own blog, in a post announcing their [API Platform](https://blog.postman.com/announcing-new-postman-api-platform/), draws a clear line between two things people often lump together when they say "API": the **Interface** the language describing the API, usually expressed through protocols like HTTP using formats like JSON and the **Implementation** the actual code powering it, which might be written in Java, Node.js, or anything else. The same post makes the point directly: decoupling these two is what gives APIs their real power, because you can completely change how something works internally while keeping the interface developers rely on exactly the same.
+
+Think of a restaurant's menu versus its kitchen. The menu (the interface) tells you exactly what you can order and roughly what to expect. The kitchen (the implementation) can completely change its recipes, swap suppliers, or hire a new chef, and as long as the dish on your plate still matches what the menu promised, you never notice or need to care. Postman's entire product exists to help teams design, test, and manage that menu reliably regardless of how often the kitchen changes behind it.
+
+## Postman Building Postman: Microservices in Practice
+
+Postman doesn't just sell tools for managing APIs, it actually runs on a whole landscape of its own internal APIs, built by its own engineering team, using roughly the same principles they preach to customers.
+
+A post on [Postman's engineering blog](https://blog.postman.com/postman-engineering-microservices-example/) describes the company's internal structure as 12 cross-functional squads producing 40 different services, with each squad taking end-to-end ownership of their own roadmap, sprints, and tooling choices while still including dedicated members from design, product, security, and quality, not just engineers. The same post is refreshingly honest that this isn't some perfectly solved system: dependencies between squads still require real coordination, and teams are constantly re-evaluating trade-offs like whether a growing domain should stay a single microservice, split into more, or even fold back toward something more like a monorepo.
+
+There's a nice bit of "eating your own dog food" here too the same blog post notes that Postman's own engineers are heavy users of Postman itself, acting as an early warning system: if something about the product is clunky, their own engineering team feels that pain directly, often before any customer does.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=12+Squads%2C+40+Services%2C+One+Platform"
+  alt="Diagram of Postman's internal squad and microservice structure"
+/>
+
+## Taming the Infrastructure Behind the Scenes
+
+A detailed post on [Postman's engineering blog](https://blog.postman.com/engineering/scaling-with-confidence-postmans-journey-to-infrastructure-as-code-with-kubernetes-and-argocd/) describes how their deployment pipeline used to be a mix of manual scripts and loosely enforced conventions workable at a small scale, but increasingly fragile as the platform grew. The same post is candid about the symptoms: environment drift was common, what worked fine in staging wouldn't always work the same way in production, rollbacks were painful because there was little confidence in what the last "known good" state even was, and onboarding a new engineer took real time simply because so much operational knowledge lived in people's heads rather than anywhere written down.
+
+The fix, according to the same post, was migrating workloads onto Kubernetes for consistency across services and regions, standardizing deployments with Helm charts, and layering a custom internal tool called Parcels on top of ArgoCD specifically so engineers could describe the environment they wanted in plain terms "an environment that looks like production, except for these three services" instead of hand-editing raw YAML configuration files every time.
+
+Imagine a growing restaurant chain where every location used to be built by a different contractor, with a different plan, remembered only by the one contractor who built it. Standardizing all of that into one blueprint, used consistently everywhere, is basically what Postman did with Helm and Kubernetes same idea, applied to server infrastructure instead of buildings.
+
+```text
+Old way:
+  Manual scripts → tribal knowledge → environment drift → risky rollbacks
+
+New way:
+  Kubernetes (consistent deployment target)
+    → Helm charts (standardized service definitions)
+      → ArgoCD (declarative, automated syncing)
+        → Parcels (self-service environments, no raw YAML needed)
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=From+Tribal+Knowledge+to+Infrastructure+as+Code"
+  alt="Diagram of Postman's migration to Kubernetes and ArgoCD"
+/>
+
+## The Newest Layer: Teaching AI Agents to Understand APIs
+
+This is where Postman's story gets genuinely interesting again, and it echoes a theme that's come up elsewhere in this series: the hard part of AI products often isn't the model, it's the structure and guardrails wrapped around it.
+
+Postman's own blog, in a post explaining [how they really build production-grade AI agents](https://blog.postman.com/how-we-really-build-production-grade-ai-agents-beyond-models-toward-data-and-api-quality/), makes a pretty blunt argument: most AI agents that look great in a demo fail in production, and the core misunderstanding behind that failure is that teams over-invest in model intelligence and under-invest in the quality of the underlying system the data the model reasons over, the reliability of the tools it calls, and the governance wrapped around what it's allowed to do. The same post argues that if a new human engineer can't reliably use an API just from reading its specification, an AI agent calling that same API has no real chance either no amount of model quality fixes a badly documented, inconsistent API underneath.
+
+That thinking shows up directly in Postman's newest feature. A post introducing the [AI Engineer](https://blog.postman.com/introducing-the-ai-engineer/) describes it as an agentic system built on top of something Postman calls the Context Graph described as an always-on, continuously updated map of the APIs and services across an entire organization. Point it at an API or application with a goal, and the same post explains it will explore endpoints, infer how things actually behave in practice (not just what the spec claims), and produce documentation, a working collection, and a real map of the system's actual behavior.
+
+The same post breaks the design into three distinct layers, which is a genuinely useful mental model for how to build a trustworthy agent at all:
+
+- **The Context Graph** defines which APIs exist, who owns them, and what's authorized, giving the agent the same guardrails a human engineer already operates within.
+- **The Execution Layer** where the agent actually acts, inside a sandboxed cloud environment where it can pull repositories, run commands, and run tests, without ever touching production directly.
+- **The Postman Toolset** the full set of Postman's existing capabilities, packaged specifically for the agent to call, rather than the agent improvising its own way of interacting with APIs.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Context+Graph+%2B+Sandbox+%2B+Governed+Tools"
+  alt="Diagram of the AI Engineer's three-layer architecture"
+/>
+
+Think about why this three-layer split matters: imagine handing a new hire the keys to production on day one versus giving them a detailed map of the building, a supervised practice room to try things safely, and a clearly labeled toolbox of exactly what they're allowed to use. Both new hires might be equally capable but only one of them is set up not to accidentally break something important on their first day. Postman's own blog is explicit that this isn't a temporary compromise while AI catches up; it describes this human-in-the-loop, tool-bounded design as a stable architecture, because real-world systems are too messy and constantly changing for a fully autonomous agent to be reliable on its own.
+
+## Why This All Connects Back to API Quality
+
+Here's the thread tying the whole article together, and it's a genuinely insightful point buried in Postman's more recent writing. The same post on [building production-grade agents](https://blog.postman.com/how-we-really-build-production-grade-ai-agents-beyond-models-toward-data-and-api-quality/) argues that as agents increasingly become the ones actually calling APIs not just humans reading documentation APIs stop being simple integration points and start becoming something closer to the control plane for what AI systems are even capable of doing. If the data feeding a model is messy, or the API it's calling is inconsistent, those problems compound quickly across a multi-step chain of agent decisions.
+
+That reframes everything discussed earlier in this article the request processing engine, the interface/implementation split, the internal microservices discipline, the move to reliable, standardized infrastructure not as separate, unrelated engineering stories, but as the same underlying discipline applied consistently over more than a decade: keep the interface clean, keep the underlying system honest, and trust gets built one reliable request at a time, whether the thing making that request is a person or, increasingly, an agent acting on their behalf.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=Reliable+APIs%2C+Reliable+Agents"
+  alt="Closing illustration connecting API quality to agent reliability"
+/>
+
+## Putting It Together
+
+None of Postman's individual pieces are exotic inventions. A request-response client is an old idea. Microservices are a common pattern. Kubernetes and Helm are widely used elsewhere. What's interesting about Postman's story is how consistently the same instinct shows up at every layer, over more than a decade: keep the interface simple and trustworthy, and be deliberately careful about what you build underneath it whether "underneath it" means a JavaScript test engine, forty internal services, a Kubernetes cluster, or, most recently, an AI agent that needs the same guardrails a new human engineer would.
+
+## What This Means Going Forward
+
+As more software gets built and operated by AI agents rather than humans clicking through a UI, the interesting engineering question isn't really "how smart is the model." It's the same question Postman has quietly been answering since 2012: is the API underneath reliable, well-documented, and honest about how it actually behaves? Get that right, and both a junior engineer on their first day and an autonomous agent on its first task end up in the same good position able to trust the interface enough to actually get something done.

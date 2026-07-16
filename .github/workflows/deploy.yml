@@ -34,6 +34,7 @@ jobs:
         run: bun run build
         env:
           NEXT_PUBLIC_BASE_PATH: /insidethestack
+          NEXT_PUBLIC_API_BASE: "https://insidethestack-backend.onrender.com"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

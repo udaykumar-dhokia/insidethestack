@@ -16,9 +16,11 @@ export interface ArticleMeta {
 }
 
 export interface Article {
+  id?: string;
   slug: string;
   meta: ArticleMeta;
   content: string;
+  likes_count?: number;
 }
 
 export function getArticleBySlug(slug: string): Article | null {
@@ -54,4 +56,48 @@ export function getAllArticles() {
     if (!a?.meta.date || !b?.meta.date) return 0;
     return new Date(b.meta.date).getTime() - new Date(a.meta.date).getTime();
   });
+}
+
+// Helper functions for fetching from the backend API
+function mapApiArticleToLocal(item: any): Article {
+  return {
+    id: item.id,
+    slug: item.slug,
+    content: item.content,
+    likes_count: item.likes_count,
+    meta: {
+      title: item.title,
+      description: item.description,
+      image: item.image,
+      category: item.category,
+      subCategory: item.subCategory,
+      date: item.published_at,
+      author: item.user?.username,
+      platformUrl: item.platformUrl,
+    }
+  };
+}
+
+export async function getArticlesFromApi(): Promise<Article[]> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/articles?limit=100`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.items || []).map(mapApiArticleToLocal);
+  } catch (error) {
+    console.error("Failed to fetch articles from API", error);
+    return [];
+  }
+}
+
+export async function getArticleBySlugFromApi(slug: string): Promise<Article | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/articles/${slug}`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const item = await res.json();
+    return mapApiArticleToLocal(item);
+  } catch (error) {
+    console.error(`Failed to fetch article ${slug} from API`, error);
+    return null;
+  }
 }

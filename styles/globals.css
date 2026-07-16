@@ -8,3 +8,12 @@
 	--font-sans: "font", sans-serif;
 	--font-mono: "monospace", monospace;
 }
+
+/* Editor Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #a1a1aa;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
