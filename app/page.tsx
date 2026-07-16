@@ -3,11 +3,32 @@ import { title, subtitle } from "@/components/primitives";
 import { GithubIcon } from "@/components/icons";
 import { ArrowUpRight } from "@/components/phosphor";
 import { RecentArticles } from "@/components/recent-articles";
+import { Metadata } from "next";
+import Script from "next/script";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function Home() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: siteConfig.name,
+    url: 'https://udaykumar-dhokia.github.io/insidethestack',
+    description: siteConfig.description,
+  };
+
   return (
     <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
-      <div className="inline-block max-w-4xl text-center justify-center">
+      <Script
+        id="json-ld-homepage"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <h1 className="inline-block max-w-4xl text-center justify-center">
         <span className={title()}>Discover&nbsp;</span>
         <span className={title({ color: "blue" })}>How&nbsp;</span>
         <span className={title()}>the World's Biggest</span>
@@ -19,7 +40,7 @@ export default function Home() {
           decisions behind products like ChatGPT, Netflix, WhatsApp, GitHub,
           Stripe, Vercel, and more.
         </div>
-      </div>
+      </h1>
       <div className="flex gap-3">
         <a
           className="button button--primary button--md rounded-full"
