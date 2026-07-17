@@ -4,58 +4,41 @@ import { getArticlesFromApi } from "@/lib/articles";
 export const dynamic = "force-static";
 
 const baseUrl = "https://udaykumar-dhokia.github.io/insidethestack";
+const BUILD_DATE = new Date("2026-07-16T00:00:00.000Z");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const articles = await getArticlesFromApi();
 
   const articleUrls = articles.map((article) => ({
-    url: `${baseUrl}/articles/${article.slug}/`,
-    lastModified: new Date(article.meta.date || Date.now()),
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
+    url: `${baseUrl}/articles/${article.slug}`,
+    lastModified: new Date(article.meta.date || BUILD_DATE),
   }));
-
-  const staticUrls = [
-    {
-      url: `${baseUrl}/articles/`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/about/`,
-      lastModified: new Date(),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/pricing/`,
-      lastModified: new Date(),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/blog/`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/docs/`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    },
-  ];
 
   return [
     {
       url: `${baseUrl}/`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 1.0,
+      lastModified: BUILD_DATE,
     },
-    ...staticUrls,
+    {
+      url: `${baseUrl}/articles/`,
+      lastModified: BUILD_DATE,
+    },
+    {
+      url: `${baseUrl}/about/`,
+      lastModified: BUILD_DATE,
+    },
+    {
+      url: `${baseUrl}/pricing/`,
+      lastModified: BUILD_DATE,
+    },
+    {
+      url: `${baseUrl}/blog/`,
+      lastModified: BUILD_DATE,
+    },
+    {
+      url: `${baseUrl}/docs/`,
+      lastModified: BUILD_DATE,
+    },
     ...articleUrls,
   ];
 }
