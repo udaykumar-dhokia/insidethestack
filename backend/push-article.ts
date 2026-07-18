@@ -27,16 +27,17 @@ async function main() {
     });
   }
 
-  const articlePath = path.join(__dirname, '../content/articles/how-dropbox-works.mdx');
+  const slug = process.argv[2] || 'how-supabase-works';
+  const articlePath = path.join(__dirname, `../content/articles/${slug}.mdx`);
   const content = fs.readFileSync(articlePath, 'utf-8');
   const parsed = matter(content);
   
   const post = await prisma.posts.upsert({
-    where: { slug: 'how-dropbox-works' },
+    where: { slug: slug },
     update: {
       title: parsed.data.title,
       description: parsed.data.description,
-      category: parsed.data.category.toUpperCase().replace(' ', '_'),
+      category: parsed.data.category.toUpperCase().replace(' & ', '_').replace(' ', '_'),
       subCategory: parsed.data.subCategory,
       image: parsed.data.image,
       platformUrl: parsed.data.platformUrl,
@@ -47,8 +48,8 @@ async function main() {
       user_id: user.id,
       title: parsed.data.title,
       description: parsed.data.description,
-      slug: 'how-dropbox-works',
-      category: parsed.data.category.toUpperCase().replace(' ', '_'),
+      slug: slug,
+      category: parsed.data.category.toUpperCase().replace(' & ', '_').replace(' ', '_'),
       subCategory: parsed.data.subCategory,
       image: parsed.data.image,
       platformUrl: parsed.data.platformUrl,

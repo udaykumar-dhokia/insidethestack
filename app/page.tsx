@@ -7,20 +7,20 @@ import { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "InsideTheStack - Discover Software Architecture & System Design",
-  description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
+  title: "InsideTheStack | How Modern Software & Platforms Work",
+  description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
   alternates: {
     canonical: "https://udaykumar-dhokia.github.io/insidethestack",
   },
   openGraph: {
-    title: "InsideTheStack - Discover Software Architecture & System Design",
-    description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
+    title: "InsideTheStack | How Modern Software & Platforms Work",
+    description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
     url: "https://udaykumar-dhokia.github.io/insidethestack",
     type: "website",
   },
   twitter: {
-    title: "InsideTheStack - Discover Software Architecture & System Design",
-    description: "Discover how the world's biggest software platforms are built. Master scaling, microservices, cloud engineering, and technical tradeoffs with deep architectural breakdowns.",
+    title: "InsideTheStack | How Modern Software & Platforms Work",
+    description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
   }
 };
 

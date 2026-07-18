@@ -4,19 +4,19 @@ import { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Explore Tech Stack Deep Dives & Case Studies | InsideTheStack",
+  title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
   description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
   alternates: {
     canonical: "https://udaykumar-dhokia.github.io/insidethestack/articles",
   },
   openGraph: {
-    title: "Explore Tech Stack Deep Dives & Case Studies | InsideTheStack",
+    title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
     description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
     url: "https://udaykumar-dhokia.github.io/insidethestack/articles",
     type: "website",
   },
   twitter: {
-    title: "Explore Tech Stack Deep Dives & Case Studies | InsideTheStack",
+    title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
     description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
   }
 };

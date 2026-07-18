@@ -110,7 +110,32 @@ export default async function ArticlePage({ params }: Props) {
     relatedArticles.push(...backfill);
   }
 
-  const jsonLd = {
+  const questionRegex = /^(how|what|why|where|when|is|are|can|do|does)\b|\?$/i;
+  const faqItems = headings
+    .filter(h => questionRegex.test(h.text))
+    .map(h => {
+      const escapedText = h.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^#{2,3}\\s+${escapedText}\\s*\\n+([^#]+)`, 'm');
+      const match = article.content.match(regex);
+      if (match && match[1]) {
+        let answer = match[1].split(/\n\s*\n/)[0].trim();
+        answer = answer.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').replace(/[*_`]/g, '');
+        if (answer.length > 20) {
+          return {
+            '@type': 'Question',
+            name: h.text,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: answer
+            }
+          };
+        }
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const jsonLd: any = {
     '@context': 'https://schema.org',
     '@graph': [
       {
@@ -139,7 +164,8 @@ export default async function ArticlePage({ params }: Props) {
         about: [
           article.meta.category ? { '@type': 'Thing', name: article.meta.category } : undefined,
           article.meta.subCategory ? { '@type': 'Thing', name: article.meta.subCategory } : undefined,
-        ].filter(Boolean)
+        ].filter(Boolean),
+        keywords: [article.meta.category, article.meta.subCategory, "System Architecture", "How it Works"].filter(Boolean).join(", ")
       },
       {
         '@type': 'BreadcrumbList',
@@ -167,6 +193,14 @@ export default async function ArticlePage({ params }: Props) {
       }
     ]
   };
+
+  if (faqItems.length > 0) {
+    jsonLd['@graph'].push({
+      '@type': 'FAQPage',
+      '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#faq`,
+      mainEntity: faqItems
+    });
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-10 items-start w-full py-4">

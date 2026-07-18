@@ -1,0 +1,155 @@
+---
+title: "How Supabase Actually Works"
+description: "A deep dive into Supabase's architecture, how a schema becomes an instant API, how database changes stream live to your screen over a write-ahead log, and how a connection pooler was built to handle a million connections to Postgres at once."
+date: "2026-07-18"
+author: "udthedeveloper"
+image: "https://supabase.com/_next/image?url=https%3A%2F%2Ffrontend-assets.supabase.com%2Fwww%2Fae957414b465%2F_next%2Fstatic%2Fmedia%2Flogo-preview.50e72501.jpg&w=3840&q=75"
+category: "DevOps & Infrastructure"
+subCategory: "Supabase"
+platformUrl: "https://supabase.com"
+---
+
+You create a table in Supabase's dashboard, and before you've written a single line of backend code, you already have a working REST API for it. Insert a row from your frontend, and a moment later, every other open tab watching that table updates live, no polling, no refresh. It feels like a lot of separate products stitched together. It's actually one very deliberate bet: instead of inventing a new kind of database, build everything around the one nearly every backend engineer already trusts PostgreSQL.
+
+This article walks through how that bet is actually engineered turning a database schema into an API automatically, streaming live changes out of Postgres's own internal log, and solving the very real problem of a serverless world sending far more database connections than Postgres was ever designed to handle. As with the rest of this series, this draws on public documentation, Supabase's own engineering blog, and independent technical breakdowns, not their literal internal source code.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=One+Schema%2C+Many+Services%2C+All+Postgres"
+  alt="Illustration of a Postgres database powering multiple connected services"
+/>
+
+## The Core Bet: Don't Reinvent the Database, Unbundle It
+
+A lot of "instant backend" tools ask you to learn their own proprietary way of storing and querying data which is fine, until you outgrow it, and suddenly migrating away feels like moving to a different country and learning a new language on your way out the door.
+
+A deep dive on [Startupik](https://startupik.com/supabase-postgres-deep-dive-architecture-and-scaling/) makes the point plainly: Supabase leans hard into standard PostgreSQL features tables, views, roles, triggers, replication, functions, JSONB, extensions, plain SQL which is exactly why teams keep their relational integrity, real joins, real transactions, and mature tooling they already know, rather than trading it away for something exotic. The same piece is direct about why this matters: your database schema, indexes, functions, and row-level policies aren't just backend implementation detail here they effectively become the application's real engine.
+
+Think of it like buying a car built entirely from parts you can get serviced at any regular mechanic, instead of one built with proprietary parts only the manufacturer can touch. You get less "magic," but you're never trapped.
+
+## From a Table to a Live API, Automatically
+
+Here's the part that feels like a party trick the first time you see it. You create a table called `todos` with a few columns, and without writing a controller, a route, or an ORM model you can already `GET`, `POST`, `PATCH`, and `DELETE` rows through a real REST API.
+
+The same [Startupik breakdown](https://startupik.com/supabase-postgres-deep-dive-architecture-and-scaling/) explains this is powered by PostgREST, a tool that auto-generates RESTful endpoints directly from your database schema meaning a table becomes a production API without anyone hand-writing controllers. Under the hood, your client SDK talks to this REST layer, or to Auth, or to Realtime, or to a database function but the same source is clear that most of those roads eventually lead to the same place: Postgres itself.
+
+```text
+You create a table: `todos (id, title, is_done, user_id)`
+  → PostgREST inspects the schema
+  → Generates: GET /todos, POST /todos, PATCH /todos?id=eq.1, DELETE /todos?id=eq.1
+  → Every request still goes through Postgres's own permission system
+  → No hand-written backend route required
+```
+
+Imagine a filing cabinet where the labels on the drawers automatically become the instructions for how to request, add, or remove documents from them you never had to separately write a memo explaining "here's how you ask for a file from drawer 3." The structure itself generates the interface.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Schema+In%2C+REST+API+Out"
+  alt="Diagram of PostgREST generating an API directly from a database schema"
+/>
+
+## Row Level Security: The Real Authorization Layer
+
+Important detail that trips up a lot of people new to Supabase, because it flips the usual mental model. In a lot of backend frameworks, "who's allowed to see this data" is a rule written in your application code an `if` statement in a controller somewhere. In Supabase, the database itself is expected to enforce that rule.
+
+A production playbook from [FrontendTechLead](https://www.frontendtechlead.com/blog/supabase-production-architecture-2026) describes Row Level Security (RLS) as effectively becoming your real authorization layer a set of policies attached directly to your Postgres tables, checked by the database itself on every single query, regardless of whether that query came through the auto-generated REST API, a Realtime subscription, or a raw SQL client.
+
+It's the difference between a bouncer standing at the door of just one entrance to a building, versus every single door inside the building, including the supply closets, having its own lock that checks your ID before it opens no matter which entrance you originally walked in through. Because RLS lives in the database itself, it can't be accidentally bypassed just because a request came in through an unexpected path.
+
+## Realtime: Listening to a Database Think Out Loud
+
+This is genuinely one of the most technically interesting parts of the whole platform, and it leans on a feature of Postgres that most developers never touch directly.
+
+Supabase's own documentation on [Realtime Architecture](https://supabase.com/docs/guides/realtime/architecture) explains the foundation: every Postgres database keeps a Write-Ahead Log, or WAL an internal, ordered record of every change made to the data, which Postgres itself uses for its own durability and replication. Supabase's Realtime service creates a logical replication slot on your database and streams that WAL, parsing out the individual insert, update, and delete events, and forwarding each one out to subscribed clients as a JSON message over a WebSocket connection.
+
+A deeper breakdown on [Medium](https://medium.com/@ansh91627/building-scalable-real-time-systems-a-deep-dive-into-supabase-realtime-architecture-and-eccb01852f2b) explains why this specific approach logical replication rather than something bolted on top of the application layer matters: it captures changes at the database level itself, which means literally any way a row gets modified (your API, a background job, someone running raw SQL) still gets picked up and broadcast, because Realtime isn't watching your application code, it's watching the database's own internal record of what happened.
+
+```text
+Someone updates a row in Postgres
+  → Change is written to the Write-Ahead Log (WAL), as Postgres always does anyway
+  → Supabase Realtime is tailing that WAL via a logical replication slot
+  → The change is parsed into a JSON event
+  → Routed to the Erlang process representing the right client's socket
+  → Delivered over WebSocket, live, to every subscribed screen
+```
+
+It's like being able to listen in on a librarian's own internal notebook where they jot down every single book they shelve or remove, rather than having to ask the librarian directly and hope they remember to tell you. Because you're reading their private, ongoing record of the truth, you never miss an update, no matter which door someone used to interact with the library.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Tailing+the+Write-Ahead+Log"
+  alt="Diagram of Realtime streaming changes from Postgres's write-ahead log"
+/>
+
+### Why Elixir, of All Languages
+
+Here's a technology choice that seems unusual at first glance, until you look at what job it's actually doing. The same Supabase documentation explains that Realtime is built on Phoenix, a framework written in Elixir chosen specifically because Elixir provides extremely lightweight, virtual-machine-level processes rather than heavy operating-system-level ones, which makes it very good at handling an enormous number of simultaneous, mostly-idle WebSocket connections at once.
+
+Imagine a call center where instead of hiring one dedicated employee per phone line expensive, and mostly sitting idle waiting for a call you have a system that can juggle hundreds of thousands of lightweight "attention slots," each one only actually doing work the instant its specific line rings. That's roughly the advantage Elixir's lightweight process model gives Supabase's Realtime service when it's holding open connections for potentially millions of mostly-quiet clients.
+
+The same documentation adds a nice resilience detail too: every Realtime region runs at least two nodes, specifically so that if one node goes offline, the other can reconnect and pick up streaming changes without the whole region going dark.
+
+## Broadcast and Presence: When You Don't Need the Database at All
+
+Not every "live" feature actually needs to touch your database. A production guide from [FrontendTechLead](https://www.frontendtechlead.com/blog/supabase-production-architecture-2026) draws a clear distinction: "Postgres Changes" (listening for inserts, updates, and deletes) is the easiest option, but every single change gets filtered per connected client and has its permissions re-checked individually meaning thousands of subscribers watching one busy table is a well-known way to hit a real scaling wall.
+
+For things like a shared cursor moving around a collaborative document, someone's "typing…" indicator, or a live list of who's currently online, the same guide recommends Broadcast sending ephemeral messages directly between clients (or from the server) without ever touching the database at all and Presence, a feature built on top of Broadcast specifically for tracking who's currently active in a channel, with automatic join and leave detection.
+
+Checking a database on every keystroke to show someone's live cursor position is like mailing a letter every time you want to say "I'm still in the room" technically it works, but it's a wildly expensive way to communicate something this lightweight and temporary. Broadcast skips the mailbox (the database) entirely for exactly this kind of message.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Postgres+Changes+vs+Broadcast+vs+Presence"
+  alt="Diagram distinguishing database-backed realtime from ephemeral broadcast messaging"
+/>
+
+## The Problem Nobody Sees Coming: Too Many Connections
+
+This is a genuinely fascinating engineering story, and a great example of an old, well-behaved piece of technology running into a brand-new usage pattern it was never designed for.
+
+Postgres, as a database, was designed decades ago around the assumption of a relatively small number of long-lived connections think a handful of application servers, each holding a steady connection open for a long time. Modern serverless applications flip that assumption on its head: potentially thousands of short-lived functions, each spinning up, briefly needing a database connection, and disappearing again seconds later.
+
+Supabase's own engineering blog, in a post called [Supavisor: Scaling Postgres to 1 Million Connections](https://supabase.com/blog/supavisor-1-million), explains the standard fix most teams reach for first: PgBouncer, a connection pooler that sits in front of Postgres and shares a small number of real database connections across a much larger number of incoming client requests, running on the same instance as the database to keep latency low. But the same post notes a real trade-off with that setup: it competes for the same compute resources as the database it's protecting.
+
+The team's answer was building Supavisor, described in the same post as architecturally different: only a single node holds the actual direct connection to a given database instance, and when you add more databases or read replicas, Supavisor spreads connections across them, with every instance in the cluster able to either execute a query directly (if it holds the connection) or relay the request to whichever node does. In their own reported load test, the same blog post describes successfully sustaining 20,000 queries per second 1.2 million queries per minute from a simulated one million concurrent client connections.
+
+```text
+The old way: PgBouncer
+  App → PgBouncer (same box as Postgres) → Postgres
+  Simple, low latency, but competes with Postgres for the same resources
+
+The new way: Supavisor
+  App → Any Supavisor node (cluster-aware)
+    → If this node holds the DB connection: execute directly
+    → If not: relay to the node that does
+  Scales connection handling independently from the database itself
+```
+
+PgBouncer is like a single receptionist standing right at the door of the one office that does all the actual work, funneling visitors through efficiently, but still sharing the same hallway and lighting bill as that office. Supavisor is more like a whole network of receptionists across several buildings, each able to either help you directly or point you to exactly the right building so a sudden crowd of visitors doesn't crowd out the actual workers trying to get things done.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Supavisor%3A+Pooling+Connections+at+Cluster+Scale"
+  alt="Diagram of Supavisor distributing database connections across a cluster"
+/>
+
+## Everything Auto-Scales, Because the Alternative Is a 3am Page
+
+A guide on [Gaincafe](https://gaincafe.com/blog/built-to-scale-supabase-grows-with-your-startup-mvp-to-ipo) paints a genuinely relatable, slightly stressful scenario: a social app gets featured somewhere, traffic spikes 50x overnight, and suddenly the database crashes, auth stops working, and file storage maxes out, all at once, while the support inbox fills up with angry messages. The same piece describes Supabase's answer to this as automatic scaling built into each layer independently connection pooling absorbing bursts of concurrent requests, read replicas automatically distributing read-heavy traffic across multiple instances, and compute resources scaling with actual demand rather than a fixed, manually-provisioned ceiling.
+
+The underlying idea connects directly back to everything covered above: connection pooling exists specifically so a sudden burst of serverless functions doesn't overwhelm Postgres directly, and read replicas exist so that heavy reporting queries or public read traffic don't compete with the writes your actual users are waiting on.
+
+## Edge Functions and Storage: Rounding Out the Platform
+
+It's worth briefly noting the pieces beyond the database itself. Supabase bundles Edge Functions serverless functions running on Deno, deployed close to users, for the kind of custom backend logic that doesn't fit neatly into a database policy or a generated REST endpoint alongside Storage, an S3-compatible file storage layer for the actual files (images, videos, uploads) a table full of URLs would otherwise just be pointing at.
+
+The pattern holds even here: rather than inventing a brand-new file storage protocol, Storage deliberately stays S3-compatible, echoing the same philosophy running through the entire platform build compatibility with what people already trust, rather than asking them to trust something new just because it's yours.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=Postgres+at+the+Center%2C+Everything+Else+Orbiting+It"
+  alt="Closing illustration summarizing Supabase's Postgres-centric architecture"
+/>
+
+## Putting It Together
+
+None of the individual pieces here are exotic on their own. Auto-generating a REST API from a schema is a known idea. Streaming a database's write-ahead log is a documented Postgres feature, not a secret. Connection pooling is decades old. What makes Supabase's architecture genuinely interesting is the consistency of the underlying bet, repeated at every layer: don't replace Postgres, don't replace S3, don't invent a new query language take what backend engineers already trust, and build the smallest possible amount of new infrastructure needed to make it feel instant, live, and automatically scalable.
+
+## What This Means Going Forward
+
+As more products lean on Supabase for genuinely demanding, real-time, high-connection-count workloads collaborative tools, live dashboards, AI applications juggling both vector search and realtime updates the same tensions covered here only get more important to understand well: knowing when a live feature actually needs the database (and Row Level Security's protection) versus when it's just an ephemeral broadcast message, and knowing that a serverless world means connection pooling isn't an optional nicety, it's load-bearing infrastructure. The lesson underneath Supabase's story isn't really about Postgres, or Elixir, or Deno specifically. It's the same one running through this whole series: the fastest way to build something that feels brand new is often to get remarkably good at orchestrating things that are already old, trusted, and thoroughly battle-tested.

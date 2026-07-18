@@ -1,20 +1,20 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "InsideTheStack Blog - Platform Engineering & Updates",
-  description: "Stay updated with platform announcements, engineering news, and thoughts on system design from the InsideTheStack team.",
+  title: "InsideTheStack Blog | System Architecture & Platform Engineering",
+  description: "Stay updated with platform announcements, engineering news, and thoughts on system design, architecture, and how modern software works from the InsideTheStack team.",
   alternates: {
     canonical: "https://udaykumar-dhokia.github.io/insidethestack/blog",
   },
   openGraph: {
-    title: "InsideTheStack Blog - Platform Engineering & Updates",
-    description: "Stay updated with platform announcements, engineering news, and thoughts on system design from the InsideTheStack team.",
+    title: "InsideTheStack Blog | System Architecture & Platform Engineering",
+    description: "Stay updated with platform announcements, engineering news, and thoughts on system design, architecture, and how modern software works from the InsideTheStack team.",
     url: "https://udaykumar-dhokia.github.io/insidethestack/blog",
     type: "website",
   },
   twitter: {
-    title: "InsideTheStack Blog - Platform Engineering & Updates",
-    description: "Stay updated with platform announcements, engineering news, and thoughts on system design from the InsideTheStack team.",
+    title: "InsideTheStack Blog | System Architecture & Platform Engineering",
+    description: "Stay updated with platform announcements, engineering news, and thoughts on system design, architecture, and how modern software works from the InsideTheStack team.",
   }
 };
 

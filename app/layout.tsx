@@ -26,7 +26,10 @@ export const metadata: Metadata = {
     "Distributed Systems",
     "Scalability",
     "Tech Stack Deep Dives",
-    "Cloud Architecture"
+    "Cloud Architecture",
+    "How Software Works",
+    "How Platforms Work",
+    "System Architecture Explained"
   ],
   authors: [{ name: "udthedeveloper", url: "https://github.com/udaykumar-dhokia" }],
   creator: "udthedeveloper",

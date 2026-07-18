@@ -58,6 +58,14 @@ export function getAllArticles() {
   });
 }
 
+export const CATEGORY_LABELS: Record<string, string> = {
+  "AI": "AI",
+  "DEVELOPER_TOOLS": "Developer Tools",
+  "CLOUD": "Cloud",
+  "PRODUCTIVITY": "Productivity",
+  "DEVOPS_INFRASTRUCTURE": "DevOps & Infrastructure",
+};
+
 // Helper functions for fetching from the backend API
 function mapApiArticleToLocal(item: any): Article {
   return {
@@ -69,7 +77,7 @@ function mapApiArticleToLocal(item: any): Article {
       title: item.title,
       description: item.description,
       image: item.image,
-      category: item.category,
+      category: CATEGORY_LABELS[item.category] || item.category,
       subCategory: item.subCategory,
       date: item.published_at,
       author: item.user?.username,
