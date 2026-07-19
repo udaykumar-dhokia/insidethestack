@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, Suspense, useEffect } from "react";
-import { Article } from "@/lib/articles";
+import type { Article } from "@/lib/articles";
 
 import NextLink from "next/link";
-import { SearchIcon } from "@/components/icons";
+import { SearchIcon, HeartFilledIcon } from "@/components/icons";
 import { useSearchParams } from "next/navigation";
 
 interface ArticlesExplorerProps {
@@ -88,8 +88,8 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
                 <h3 className="text-xl font-bold leading-tight">{article.meta.title}</h3>
                 <p className="text-muted-foreground line-clamp-2 text-sm">{article.meta.description}</p>
               </div>
-              <div className="pt-4 flex flex-col items-start gap-2 w-full mt-auto">
-                <div className="flex flex-wrap gap-2 w-full">
+              <div className="pt-4 flex justify-between items-center gap-2 w-full mt-auto">
+                <div className="flex flex-wrap gap-2">
                   {article.meta.category && (
                     <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md">
                       {article.meta.category}
@@ -100,6 +100,10 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
                       {article.meta.subCategory}
                     </span>
                   )}
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                  <HeartFilledIcon className="w-4 h-4 text-red-500" />
+                  <span>{article.likes_count || 0}</span>
                 </div>
               </div>
             </NextLink>

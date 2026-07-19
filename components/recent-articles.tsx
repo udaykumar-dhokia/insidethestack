@@ -3,6 +3,8 @@
 import NextLink from "next/link";
 import { Skeleton } from "@heroui/react";
 import { useGetArticlesQuery } from "@/lib/store/api/articlesApi";
+import { HeartFilledIcon } from "@/components/icons";
+import { CATEGORY_LABELS } from "@/lib/constants";
 
 export function RecentArticles() {
   const { data, isLoading, error } = useGetArticlesQuery({ limit: 4 });
@@ -30,11 +32,12 @@ export function RecentArticles() {
               <Skeleton className="h-4 w-full rounded-md" />
               <Skeleton className="h-4 w-5/6 rounded-md" />
             </div>
-            <div className="pt-4 flex flex-col items-start gap-2 w-full mt-auto">
-              <div className="flex flex-wrap gap-2 w-full">
+            <div className="pt-4 flex justify-between items-center gap-2 w-full mt-auto">
+              <div className="flex flex-wrap gap-2">
                 <Skeleton className="h-6 w-16 rounded-md" />
                 <Skeleton className="h-6 w-20 rounded-md" />
               </div>
+              <Skeleton className="h-4 w-8 rounded-md" />
             </div>
           </div>
         ))
@@ -64,11 +67,11 @@ export function RecentArticles() {
                 {article.description}
               </p>
             </div>
-            <div className="pt-4 flex flex-col items-start gap-2 w-full mt-auto">
-              <div className="flex flex-wrap gap-2 w-full">
+            <div className="pt-4 flex justify-between items-center gap-2 w-full mt-auto">
+              <div className="flex flex-wrap gap-2">
                 {article.category && (
                   <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-md">
-                    {article.category}
+                    {CATEGORY_LABELS[article.category] || article.category}
                   </span>
                 )}
                 {article.subCategory && (
@@ -76,6 +79,10 @@ export function RecentArticles() {
                     {article.subCategory}
                   </span>
                 )}
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                <HeartFilledIcon className="w-4 h-4 text-red-500" />
+                <span>{article.likes_count || 0}</span>
               </div>
             </div>
           </NextLink>

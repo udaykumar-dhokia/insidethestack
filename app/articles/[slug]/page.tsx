@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { components, slugify } from '@/components/mdx-components';
 import { FloatingActionButtons } from '@/components/floating-action-buttons';
+import { HeartFilledIcon } from '@/components/icons';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -282,6 +283,12 @@ export default async function ArticlePage({ params }: Props) {
                   <div className="p-4 flex flex-col flex-1">
                     <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{related.meta.title}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2">{related.meta.description}</p>
+                    <div className="pt-4 flex justify-end items-center mt-auto">
+                      <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+                        <HeartFilledIcon className="w-4 h-4 text-red-500" />
+                        <span>{related.likes_count || 0}</span>
+                      </div>
+                    </div>
                   </div>
                 </Link>
               ))}

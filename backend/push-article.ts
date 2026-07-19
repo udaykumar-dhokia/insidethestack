@@ -27,7 +27,7 @@ async function main() {
     });
   }
 
-  const slug = process.argv[2] || 'how-supabase-works';
+  const slug = process.argv[2] || 'how-replit-works';
   const articlePath = path.join(__dirname, `../content/articles/${slug}.mdx`);
   const content = fs.readFileSync(articlePath, 'utf-8');
   const parsed = matter(content);

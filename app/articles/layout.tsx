@@ -1,9 +1,9 @@
-import { getAllArticles } from "@/lib/articles";
+import { getArticlesFromApi } from "@/lib/articles";
 import { ArticlesSidebar } from "@/components/articles-sidebar";
 import { Suspense } from "react";
 
-export default function ArticlesLayout({ children }: { children: React.ReactNode }) {
-  const articles = getAllArticles();
+export default async function ArticlesLayout({ children }: { children: React.ReactNode }) {
+  const articles = await getArticlesFromApi();
   
   return (
     <div className="flex flex-col md:flex-row gap-8 w-full">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Article } from "@/lib/articles";
+import type { Article } from "@/lib/articles";
 import NextLink from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -46,7 +46,7 @@ export function ArticlesSidebar({ articles }: ArticlesSidebarProps) {
 
   return (
     <aside className="w-full md:w-64 flex-shrink-0">
-      <div className="md:sticky md:top-24">
+      <div className="md:sticky md:top-24 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide">
         {/* Mobile Toggle Button */}
         <button 
           onClick={() => setIsOpen(!isOpen)}

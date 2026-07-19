@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { CATEGORY_LABELS } from './constants';
 
 const contentDir = path.join(process.cwd(), 'content', 'articles');
 
@@ -57,14 +58,6 @@ export function getAllArticles() {
     return new Date(b.meta.date).getTime() - new Date(a.meta.date).getTime();
   });
 }
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  "AI": "AI",
-  "DEVELOPER_TOOLS": "Developer Tools",
-  "CLOUD": "Cloud",
-  "PRODUCTIVITY": "Productivity",
-  "DEVOPS_INFRASTRUCTURE": "DevOps & Infrastructure",
-};
 
 // Helper functions for fetching from the backend API
 function mapApiArticleToLocal(item: any): Article {
