@@ -68,15 +68,22 @@ async function main() {
 
   const xml = buildSitemapXml(articles);
 
+  // Write to public/ so Next.js copies it to out/ during build
   const publicDir = path.join(__dirname, "..", "public");
   if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir, { recursive: true });
   }
+  fs.writeFileSync(path.join(publicDir, "sitemap.xml"), xml, "utf-8");
+  console.log(`   ✔ Written to public/sitemap.xml`);
 
-  const outputPath = path.join(publicDir, "sitemap.xml");
-  fs.writeFileSync(outputPath, xml, "utf-8");
+  // Also write to out/ if it exists (post-build override, in case Next.js regenerated it)
+  const outDir = path.join(__dirname, "..", "out");
+  if (fs.existsSync(outDir)) {
+    fs.writeFileSync(path.join(outDir, "sitemap.xml"), xml, "utf-8");
+    console.log(`   ✔ Written to out/sitemap.xml`);
+  }
 
-  console.log(`✅  sitemap.xml written to public/sitemap.xml (${articles.length} articles + 6 static pages)`);
+  console.log(`✅  Done — ${articles.length} articles + 6 static pages`);
 }
 
 main();
