@@ -1,0 +1,135 @@
+---
+title: "How n8n Actually Works"
+description: "A deep dive into n8n's architecture, how the execution engine walks your workflow like a checklist, why a single slow node can block everything after it, and how queue mode turns a fragile single server into a system that survives 20,000 webhooks at once."
+date: "2026-07-20"
+author: "udthedeveloper"
+image: "https://cdn.prod.website-files.com/687e8d1b96312cc631cafec7/69ef20bd19271dfac659d2c7_icon.png"
+category: "Automation"
+subCategory: "n8n"
+platformUrl: "https://n8n.io"
+---
+
+You drag a Webhook node onto the canvas, connect it to a Google Sheets node, add an if-condition and a Slack notification, hit "Activate," and just like that, you've built something that used to require an actual backend service. The first time it works, it genuinely feels like magic a request comes in, and a few seconds later a message shows up in Slack, with zero servers you had to configure by hand.
+
+The magic has a very real engine underneath it, and understanding how that engine actually walks through your workflow explains a lot of behavior that otherwise feels confusing why one slow API call can freeze an entire workflow, why 100 incoming leads become 100 separate outgoing API calls, and why a "little automation server" that worked fine with ten workflows can start buckling under two hundred. This article is a look at that engine, and at the architecture change that turns a fragile single instance into something that can survive a genuine flood of traffic. Most of the detail comes from n8n's own blog and documentation, with a few solid independent technical breakdowns filling in the practical edges.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Trigger+%E2%86%92+Nodes+%E2%86%92+Action"
+  alt="Illustration of a workflow triggering a chain of connected nodes"
+/>
+
+## The Engine Walks Your Workflow Like a Checklist
+
+Here's the single most useful mental model for understanding how n8n actually behaves, and it comes from a detailed technical breakdown on [PageLines](https://www.pagelines.com/blog/how-n8n-works-technical-breakdown): the engine walks your workflow like a checklist, and it won't start a node until all of that node's inputs are ready. That single sentence explains a surprising amount of "why did my workflow do that?" confusion.
+
+Imagine an assembly line where each station has to wait for the part from the station before it even if the very next station down the line is sitting completely idle and ready to go, it still can't start until its own specific input actually arrives. The same PageLines breakdown spells out the direct consequence of this design: a slow API call in one node blocks everything that comes after it, and even independent, unrelated operations still wait in line rather than jumping ahead.
+
+```text
+Workflow: Webhook → HTTP Request (slow API) → Format Data → Send Slack Message
+  → Webhook fires instantly
+  → HTTP Request takes 8 seconds to respond
+  → Format Data and Send Slack Message are both ready to run,
+    but they wait, because the engine processes nodes in dependency order
+  → Nothing downstream starts until the slow node finishes
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=One+Slow+Node+Blocks+Everything+After+It"
+  alt="Diagram of sequential node execution being blocked by one slow step"
+/>
+
+## Why "100 Leads In" Becomes "100 API Calls Out"
+
+Here's a genuinely surprising behavior that trips up a lot of people building their first real workflow, and it's worth understanding clearly rather than discovering it the hard way in production. The same PageLines breakdown explains that if 100 leads flow into an HTTP Request node, n8n doesn't automatically batch them into a single combined API call it makes 100 separate calls, one per lead, by default.
+
+Imagine ordering 100 individual coffees from a barista, one order ticket at a time, instead of handing over a single ticket that says "100 coffees, please." Both eventually get you the same 100 coffees, but the first approach means 100 separate trips to the espresso machine, 100 separate chances for something to go slightly wrong, and if there's a limit on how many orders the shop can take per minute 100 chances to hit that limit.
+
+The same breakdown notes this cuts both ways. The downside is obvious: rate limits get hit fast, and a 200-millisecond API call multiplied by 100 items adds up to 20 real seconds of total execution time. But there's a genuine upside too because each item is processed independently, one bad email or one malformed record doesn't kill the whole batch; item 47 can fail while items 1 through 46 and 48 through 100 all succeed just fine. If you actually need true batching sending one combined request instead of many individual ones the same source recommends using a Code node to explicitly aggregate items together first, since that behavior doesn't happen automatically.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=One+Item+In+%E2%86%92+One+Call+Out%2C+Repeated"
+  alt="Diagram of per-item processing generating individual API calls"
+/>
+
+## The Trap of Assuming Parallel, When It's Actually Sequential
+
+Following directly from the checklist model above, the same source flags what it calls the biggest surprise for most people building workflows: getting genuinely parallel execution isn't automatic just because two branches look independent on the visual canvas. True parallelism specifically requires the SplitInBatches node, which deliberately creates separate execution branches rather than relying on the engine to figure out on its own that two paths could safely run at the same time.
+
+This is a good reminder that a visual canvas can create an illusion of "everything happens at once" that isn't actually how the underlying engine behaves the diagram shows you the _relationships_ between steps, not necessarily their real execution timing.
+
+## From "Works on My Laptop" to "Buckling Under 200 Workflows"
+
+Here's a genuinely relatable story arc, described well in a piece on [Medium by Quaxel](https://medium.com/@Quaxel/scaling-n8n-without-losing-your-mind-829c950d9176): the first time n8n fires off a few webhooks and cron jobs, it feels like magic. Then someone in marketing wires up 40 more workflows. Support adds 20 more. Product wants "real-time everything." Suddenly, what felt like a small, tidy automation server is quietly running hundreds of workflows, API calls are spiking, and the database is straining to keep up.
+
+The same piece explains why this happens architecturally: by default, n8n runs as a single process handling three very different jobs at once accepting incoming triggers, actually running workflows, and talking to the database. On a single node, doing all three at once works fine, right up until the volume of executions turns that convenient all-in-one setup into a genuine bottleneck.
+
+It's like one person at a small shop simultaneously answering the phone, ringing up customers at the register, and restocking shelves. It works fine when the shop is quiet. The moment a rush of customers shows up all at once, that same person trying to do all three jobs becomes the actual reason the line stops moving not because they're bad at their job, but because one person genuinely can't be three places doing three different things simultaneously under real load.
+
+## The Fix: Queue Mode Separates "Taking the Order" From "Cooking the Meal"
+
+This is the architectural shift that changes everything, and it's a really clean example of a classic distributed-systems idea decoupling applied to a practical, everyday tool.
+
+n8n's own documentation on [configuring queue mode](https://docs.n8n.io/hosting/scaling/queue-mode/) lays out exactly how this works: the main n8n instance handles incoming timers and webhook calls, but rather than running that workflow execution itself, it just generates the execution and passes its ID along to Redis, a message broker that maintains a queue of pending executions. From there, any available worker in a pool of worker instances can pick that message up, pull the actual workflow details from the database, run it, write the results back to the database, and post a message back to Redis confirming the execution has finished.
+
+Here's a relatable comparison, and it's basically the exact fix for the "one person doing three jobs" problem above: it's the difference between one overwhelmed employee doing everything, versus a proper restaurant setup a host taking your order at the front (the main instance accepting the webhook), an order slip going back to the kitchen via a rail (Redis, the queue), and any one of several available cooks (the worker pool) picking up that slip and actually preparing the meal, entirely independently of how busy the front host currently is.
+
+```text
+Single mode (default):
+  Webhook arrives → Main process both accepts AND executes the workflow
+  → One process doing everything, one bottleneck if it gets busy
+
+Queue mode:
+  Webhook arrives → Main process just accepts it, generates an execution ID
+    → ID is pushed to Redis (the queue)
+      → Any available Worker picks it up
+        → Worker pulls workflow details from the database
+        → Worker actually executes the workflow
+        → Worker writes results back to the database
+        → Worker confirms completion back via Redis
+  → Adding more workers = handling more concurrent executions
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Main+Accepts%2C+Redis+Queues%2C+Workers+Execute"
+  alt="Diagram of n8n's queue mode architecture with Redis and worker instances"
+/>
+
+## The Numbers That Make the Case
+
+It's one thing to describe queue mode conceptually. It's another to see exactly how much it actually matters under real load, and n8n's own blog did the legwork here directly. A post on [n8n's Scalability Benchmark](https://blog.n8n.io/the-n8n-scalability-benchmark/) describes load-testing both single mode and queue mode using K6, on real infrastructure, ramping up virtual users and measuring what actually happened.
+
+The results are a genuinely convincing case for why queue mode exists at all. In single mode, throughput topped out modestly even on larger hardware. Once queue mode was enabled described in the same post as n8n's more scalable architecture that decouples webhook intake from workflow execution performance jumped to 72 requests per second, latency dropped under three seconds, and the system handled 200 virtual users with zero failures. Scaling up the underlying hardware further, to a machine with 16 vCPUs and 32GB of RAM, pushed queue mode to a consistent 162 requests per second, sustained across the full 200-virtual-user load, with latency under 1.2 seconds and zero failures described in the same post as a 10x throughput gain, achieved specifically by combining more hardware with the right architecture, not hardware alone.
+
+That last detail matters: the same blog post is making a point that echoes across a lot of this series simply throwing more CPU and RAM at a bottlenecked architecture only gets you so far. The real gain came from the architectural decision to decouple accepting a request from actually processing it.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Queue+Mode%3A+A+10x+Throughput+Gain"
+  alt="Diagram summarizing the measured throughput gains from queue mode"
+/>
+
+## What Happens When a Worker Crashes Mid-Job
+
+Here's a genuinely reassuring detail worth knowing if you're relying on n8n for anything business-critical. The same [PageLines breakdown](https://www.pagelines.com/blog/how-n8n-works-technical-breakdown) explains that a worker picks up a job, runs the entire workflow, and stores the results but if that worker crashes partway through, the job simply returns to the queue, where another worker picks it up and retries it. Workers themselves are described as stateless, meaning any worker can run any workflow, since none of them are storing anything locally that only they would know about.
+
+It's like a shared kitchen where any available cook can pick up any order ticket, because no single cook is the only one who happens to know the recipe or has some private ingredient stashed only at their station. If a cook suddenly has to step away mid-dish, the ticket just goes back into the queue, and any other cook can pick it up and start fresh, without needing anything that only existed in the first cook's head.
+
+## Why an Automation Backlog Isn't Automatically a Crisis
+
+Here's a genuinely useful framing from a piece on [Medium by Nexumo](https://medium.com/@Nexumo_/n8n-queues-throughput-by-design-9a17a5f62eb2), describing a very relatable scenario: at 10am, a business partner's system retries 20,000 order webhooks all at once after recovering from a network hiccup. Without queue mode, the same post explains, this kind of burst causes real problems producers keep producing faster than consumers can keep up (no backpressure), one slow API call drags down everything queued behind it (head-of-line blocking), retries from upstream systems pile on top of an already-struggling system, and the whole editor UI becomes collateral damage, becoming sluggish for anyone trying to actually work in it at the same time.
+
+The same post makes a subtle but important point about what queues actually give you: they don't make the underlying work happen instantly. What they do is make the system honest you can actually see the backlog building up, you can control how much concurrency you allow, and you get to decide deliberately what happens when capacity gets exceeded, rather than the system silently falling over without any warning.
+
+It's the difference between a restaurant with no waitlist system, where a sudden rush just causes total chaos and abandoned orders, versus a restaurant that hands out numbered tickets the wait might still exist, but it's visible, predictable, and nobody's order silently gets lost in the confusion.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=A+Backlog+You+Can+See+Beats+One+You+Can%27t"
+  alt="Closing illustration representing visible, managed backlog versus silent overload"
+/>
+
+## Putting It Together
+
+None of the individual pieces here are exotic inventions on their own. A dependency-ordered execution engine is a common pattern. Redis-backed job queues are a well-established idea. Stateless worker pools show up across countless distributed systems. What makes n8n's architecture worth understanding isn't any single piece it's how directly these decisions explain the everyday experience of actually building with it: why your workflow feels sequential even when parts of it look independent, why sending data to 100 recipients means 100 individual calls rather than one, and why a tool that felt effortless with ten workflows needs a genuinely different architecture main process, Redis queue, worker pool once real, unpredictable traffic starts arriving.
+
+## What This Means Going Forward
+
+As more teams lean on n8n for genuinely business-critical automation order processing, customer-facing workflows, AI agent pipelines chaining together dozens of steps the same lessons in this article only get more relevant: understanding that the engine executes in dependency order, not magically in parallel; understanding that per-item processing has real trade-offs around rate limits and resilience; and understanding that queue mode isn't an advanced feature to bolt on someday, it's the architecture that turns "it worked in my demo" into "it kept working when 20,000 webhooks showed up at once." The lesson underneath n8n's story is the same one running through this entire series: the tools that feel the most effortless to use are usually the ones where someone thought hardest about what happens when things stop going according to plan.

@@ -4,4 +4,5 @@ export const CATEGORY_LABELS: Record<string, string> = {
   "CLOUD": "Cloud",
   "PRODUCTIVITY": "Productivity",
   "DEVOPS_INFRASTRUCTURE": "DevOps & Infrastructure",
+  "AUTOMATION": "Automation",
 };
