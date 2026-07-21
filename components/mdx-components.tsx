@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { CodeBlock } from './code-block';
 import { MDXComponents } from 'mdx/types';
 
 export function slugify(text: string) {
@@ -29,5 +30,7 @@ export const components: MDXComponents = {
       </span>
     );
   },
-  // Add other custom MDX components here if needed
+  pre: (props) => {
+    return <CodeBlock {...props} />;
+  }
 };

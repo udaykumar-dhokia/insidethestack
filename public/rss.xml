@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>InsideTheStack</title>
+    <link>https://udaykumar-dhokia.github.io/insidethestack</link>
+    <description>Deep dives into software architecture, system design, and the tools developers love.</description>
+    <language>en-us</language>
+    <atom:link href="https://udaykumar-dhokia.github.io/insidethestack/rss.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title><![CDATA[How Figma Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-figma-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-figma-works</guid>
+      <pubDate>Tue, 21 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Figma's architecture, the custom C++ rendering engine compiled to WebAssembly, the deliberately simple conflict-resolution system behind multiplayer editing, and the four-year journey from one Postgres database to a fully sharded fleet.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How n8n Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-n8n-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-n8n-works</guid>
+      <pubDate>Mon, 20 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into n8n's architecture, how the execution engine walks your workflow like a checklist, why a single slow node can block everything after it, and how queue mode turns a fragile single server into a system that survives 20,000 webhooks at once.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Replit Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-replit-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-replit-works</guid>
+      <pubDate>Sun, 19 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Replit's architecture, the storage engine that lets you fork an entire app instantly, the sandboxed databases that keep an AI agent from wrecking your production data, and the multi-agent system doing the actual building.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Supabase Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-supabase-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-supabase-works</guid>
+      <pubDate>Sat, 18 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Supabase's architecture, how a schema becomes an instant API, how database changes stream live to your screen over a write-ahead log, and how a connection pooler was built to handle a million connections to Postgres at once.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Dropbox Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-dropbox-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-dropbox-works</guid>
+      <pubDate>Fri, 17 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Dropbox's architecture, the custom-built Magic Pocket storage system holding exabytes of data, and Nucleus, the from-scratch Rust rewrite of the sync engine running on half a billion devices.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Postman Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-postman-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-postman-works</guid>
+      <pubDate>Thu, 16 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Postman's architecture from the simple client-server design behind every request you send, to the microservices, Kubernetes migration, and Context Graph powering its newest AI agents.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Slack Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-slack-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-slack-works</guid>
+      <pubDate>Wed, 15 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Slack's architecture, the Channel Servers, Gateway Servers, and WebSocket connections that deliver messages across the globe in under 500 milliseconds, and the video-game origins that shaped it all.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Vercel Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-vercel-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-vercel-works</guid>
+      <pubDate>Tue, 14 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Vercel's architecture the deployment pipeline, the global edge network, and the serverless and edge functions that let a git push turn into a live, fast website anywhere in the world.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How NotebookLM Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-notebooklm-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-notebooklm-works</guid>
+      <pubDate>Mon, 13 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into how NotebookLM turns your own documents into grounded answers, audio podcasts, and research reports, the retrieval pipeline, and the long-context Gemini model.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Notion Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-notion-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-notion-works</guid>
+      <pubDate>Sun, 12 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Notion's architecture the block-based data model at its core, how it scaled a single Postgres database to 200 billion blocks, and how real-time collaboration stays smooth across millions of users.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Lovable Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-lovable-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-lovable-works</guid>
+      <pubDate>Sat, 11 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[How Lovable turns plain-English prompts into real, working full-stack apps.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How GitHub Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-github-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-github-works</guid>
+      <pubDate>Fri, 10 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into GitHub's architecture  the Rails monolith at its core, the Spokes system that keeps every repository alive on three servers at once, and the scaling decisions behind a platform serving hundreds of millions of developers.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Perplexity Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-perplexity-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-perplexity-works</guid>
+      <pubDate>Thu, 09 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Perplexity AI's architecture from its Vespa-powered search backbone to the Sonar model family, multi-model routing, and how it turns a raw question into a cited, real-time answer.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How Cursor Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-cursor-ide-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-cursor-ide-works</guid>
+      <pubDate>Wed, 08 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into how Cursor IDE blends a familiar code editor with AI  from codebase indexing to multi-model routing to how it applies a diff without breaking your file.]]></description>
+    </item>
+    <item>
+      <title><![CDATA[How OpenAI Scales ChatGPT]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-openai-scales-chatgpt</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-openai-scales-chatgpt</guid>
+      <pubDate>Tue, 07 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into the infrastructure and architecture decisions that allow ChatGPT to serve hundreds of millions of users concurrently.]]></description>
+    </item>
+  </channel>
+</rss>

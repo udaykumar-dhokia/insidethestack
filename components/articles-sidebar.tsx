@@ -46,7 +46,7 @@ export function ArticlesSidebar({ articles }: ArticlesSidebarProps) {
 
   return (
     <aside className="w-full md:w-64 flex-shrink-0">
-      <div className="md:sticky md:top-24 overflow-y-auto max-h-[calc(100vh-6rem)] scrollbar-hide">
+      <div className="md:sticky md:top-24 overflow-y-auto max-h-[calc(100vh-6rem)] minimal-scrollbar">
         {/* Mobile Toggle Button */}
         <button 
           onClick={() => setIsOpen(!isOpen)}

@@ -1,7 +1,17 @@
-import { ImageResponse } from "@vercel/og";
-import { getArticleBySlugFromApi } from "@/lib/articles";
+import { ImageResponse } from "next/og";
+import { getArticleBySlugFromApi, getArticlesFromApi } from "@/lib/articles";
 
-export const runtime = "edge";
+export async function generateStaticParams() {
+  const articles = await getArticlesFromApi();
+  if (!articles || articles.length === 0) {
+    return [{ slug: 'fallback' }];
+  }
+  return articles.map((article) => ({
+    slug: article?.slug,
+  }));
+}
+
+export const dynamic = 'force-static';
 
 export const alt = "InsideTheStack Article Cover";
 export const size = {

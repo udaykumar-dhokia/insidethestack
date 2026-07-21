@@ -76,11 +76,45 @@ async function main() {
   fs.writeFileSync(path.join(publicDir, "sitemap.xml"), xml, "utf-8");
   console.log(`   ✔ Written to public/sitemap.xml`);
 
-  // Also write to out/ if it exists (post-build override, in case Next.js regenerated it)
+  // Write to out/ if it exists (post-build override, in case Next.js regenerated it)
   const outDir = path.join(__dirname, "..", "out");
   if (fs.existsSync(outDir)) {
     fs.writeFileSync(path.join(outDir, "sitemap.xml"), xml, "utf-8");
     console.log(`   ✔ Written to out/sitemap.xml`);
+  }
+
+  // --- RSS GENERATION ---
+  console.log("📰  Generating rss.xml...");
+  const rssItems = articles.map(article => {
+    const articleUrl = `${baseUrl}/articles/${article.slug}`;
+    const pubDate = new Date(article.published_at || BUILD_DATE).toUTCString();
+    return `
+    <item>
+      <title><![CDATA[${article.title}]]></title>
+      <link>${articleUrl}</link>
+      <guid>${articleUrl}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <description><![CDATA[${article.description || ''}]]></description>
+    </item>`;
+  }).join('');
+
+  const rss = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>InsideTheStack</title>
+    <link>${baseUrl}</link>
+    <description>Deep dives into software architecture, system design, and the tools developers love.</description>
+    <language>en-us</language>
+    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml" />
+    ${rssItems}
+  </channel>
+</rss>`;
+
+  fs.writeFileSync(path.join(publicDir, "rss.xml"), rss, "utf-8");
+  console.log(`   ✔ Written to public/rss.xml`);
+  if (fs.existsSync(outDir)) {
+    fs.writeFileSync(path.join(outDir, "rss.xml"), rss, "utf-8");
+    console.log(`   ✔ Written to out/rss.xml`);
   }
 
   console.log(`✅  Done — ${articles.length} articles + 6 static pages`);

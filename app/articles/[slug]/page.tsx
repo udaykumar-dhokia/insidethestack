@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { components, slugify } from '@/components/mdx-components';
 import { FloatingActionButtons } from '@/components/floating-action-buttons';
 import { HeartFilledIcon } from '@/components/icons';
+import { StickyTableOfContents } from '@/components/sticky-toc';
+import { ReadingProgress } from '@/components/reading-progress';
+import { GiscusComments } from '@/components/giscus';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -203,6 +206,7 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-10 items-start w-full py-4">
+      <ReadingProgress />
       <Script
         id="json-ld"
         type="application/ld+json"
@@ -229,16 +233,19 @@ export default async function ArticlePage({ params }: Props) {
               </time>
             )}
             {article.meta.author && <span>By {article.meta.author}</span>}
+            <span>&bull;</span>
+            <span>{Math.max(1, Math.ceil(article.content.split(/\s+/).length / 200))} min read</span>
           </div>
         </header>
         
         {article.meta.image && (
-          <div className="w-full mb-10 rounded-2xl overflow-hidden shadow-lg border border-divider bg-content2 flex justify-center relative min-h-[300px] md:min-h-[500px]">
+          <div className="w-full mb-10 rounded-2xl overflow-hidden shadow-lg border border-divider bg-content2 flex justify-center">
             <Image 
               src={article.meta.image} 
               alt={article.meta.title}
-              fill
-              className="object-contain"
+              width={1200}
+              height={630}
+              className="w-full h-auto object-cover"
               sizes="(max-width: 850px) 100vw, 850px"
               priority
             />
@@ -298,41 +305,10 @@ export default async function ArticlePage({ params }: Props) {
             </div>
           </div>
         )}
+        <GiscusComments />
       </article>
 
-      {headings.length > 0 && (
-        <aside className="hidden lg:block w-64 flex-shrink-0 sticky top-24">
-          <h3 className="text-sm font-bold uppercase tracking-wider mb-4 text-foreground/70">
-            On this page
-          </h3>
-          <div className="flex flex-col gap-4 text-sm">
-            {headings.map((heading, i) => (
-              <div key={i} className="flex flex-col gap-2">
-                <a 
-                  href={`#${heading.id}`} 
-                  className="font-medium text-foreground hover:text-primary transition-colors block leading-tight"
-                >
-                  {heading.text}
-                </a>
-                
-                {heading.children.length > 0 && (
-                  <div className="flex flex-col gap-2 pl-4 border-l border-divider ml-2">
-                    {heading.children.map((sub, j) => (
-                      <a 
-                        key={j}
-                        href={`#${sub.id}`} 
-                        className="text-muted-foreground hover:text-foreground transition-colors block leading-tight"
-                      >
-                        {sub.text}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </aside>
-      )}
+      <StickyTableOfContents headings={headings} />
 
       <FloatingActionButtons 
         articleId={article.id}
