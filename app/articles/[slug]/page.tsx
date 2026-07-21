@@ -44,14 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
       modifiedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
       authors: ['https://github.com/udaykumar-dhokia'],
-      images: article.meta.image ? [{ url: article.meta.image, alt: article.meta.title }] : [],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${article.meta.title} | InsideTheStack`,
       description: article.meta.description,
       creator: '@udaykumardhokia',
-      images: article.meta.image ? [article.meta.image] : [],
     },
   };
 }
@@ -235,11 +233,14 @@ export default async function ArticlePage({ params }: Props) {
         </header>
         
         {article.meta.image && (
-          <div className="w-full mb-10 rounded-2xl overflow-hidden shadow-lg border border-divider bg-content2 flex justify-center">
-            <img 
+          <div className="w-full mb-10 rounded-2xl overflow-hidden shadow-lg border border-divider bg-content2 flex justify-center relative min-h-[300px] md:min-h-[500px]">
+            <Image 
               src={article.meta.image} 
               alt={article.meta.title}
-              className="w-full h-auto max-h-[500px] object-contain"
+              fill
+              className="object-contain"
+              sizes="(max-width: 850px) 100vw, 850px"
+              priority
             />
           </div>
         )}
@@ -273,10 +274,12 @@ export default async function ArticlePage({ params }: Props) {
                 >
                   {related.meta.image && (
                     <div className="w-full h-32 relative overflow-hidden bg-background">
-                      <img 
+                      <Image 
                         src={related.meta.image} 
-                        alt={related.meta.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        alt={related.meta.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
                       />
                     </div>
                   )}

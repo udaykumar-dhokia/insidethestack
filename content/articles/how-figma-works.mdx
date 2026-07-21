@@ -1,0 +1,140 @@
+---
+title: "How Figma Actually Works"
+description: "A deep dive into Figma's architecture, the custom C++ rendering engine compiled to WebAssembly, the deliberately simple conflict-resolution system behind multiplayer editing, and the four-year journey from one Postgres database to a fully sharded fleet."
+date: "2026-07-21"
+author: "udthedeveloper"
+image: "https://s3-alpha.figma.com/hub/file/2167104317601928565/6fe8c744-e5e1-40f1-a462-9d1793090d6e-cover.png"
+category: "Productivity"
+subCategory: "Figma"
+platformUrl: "https://figma.com"
+---
+
+Open a Figma file with five other people editing it at once, and every cursor, every dragged rectangle, every renamed layer shows up instantly on everyone's screen. Zoom into a massive, thousand-frame design file, and it stays buttery smooth inside a browser tab, a place traditionally associated with sluggish scrolling, not professional-grade software. Both of these things shouldn't really be possible in a browser. Figma built its way around that assumption twice: once for rendering, once for collaboration.
+
+This article looks at how Figma is actually built the rendering engine that bypasses the browser's usual drawing pipeline entirely, the surprisingly simple system that resolves multiple people editing the same object at once, and the database scaling story that took a single Postgres instance to a fleet handling 100x the original load. Most of this comes directly from Figma's own engineering blog. As with the rest of this series, this is a reconstruction from public writing, not their literal internal source code.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=A+Browser+Tab+Rendering+Like+a+Native+App"
+  alt="Illustration of Figma's design canvas running inside a browser"
+/>
+
+## Skipping the Browser's Own Drawing Pipeline
+
+Most web apps let the browser do the heavy lifting of drawing things on screen HTML elements, CSS styling, the browser's own layout engine. Figma's founding engineer, Evan Wallace, made a different call early on: draw everything directly to the GPU, bypassing the browser's HTML pipeline entirely.
+
+A detailed architecture breakdown on [ggprompts](https://ggprompts.com/architecture/figma/) explains the result: Figma's rendering engine is written in C++, then compiled to WebAssembly for the browser (or natively to x64/arm64 for server-side rendering and testing). The same breakdown notes a genuinely surprising outcome of this approach despite running inside a browser tab, Figma's renderer was often faster than competitors' native desktop applications, thanks to direct GPU access and aggressive tile-based optimization.
+
+Building your own renderer from scratch has a real cost, though, and the same source is upfront about it: because Figma bypassed the browser's normal rendering pipeline, it also had to build its own custom color pickers, text layout engines, and other UI primitives that browsers normally hand you for free. A team choosing this path is explicitly trading a slower start for long-term control over performance.
+
+```text
+Traditional web app:
+  Your code → Browser's HTML/CSS engine → Browser draws it
+
+Figma's approach:
+  C++ rendering engine → compiled to WebAssembly → draws directly to the GPU
+  (browser's HTML pipeline is bypassed almost entirely)
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Bypassing+HTML%2C+Drawing+Straight+to+the+GPU"
+  alt="Diagram of Figma's rendering pipeline bypassing the browser's HTML engine"
+/>
+
+Wallace's own post on the switch, [WebAssembly cut Figma's load time by 3x](https://www.figma.com/blog/webassembly-cut-figmas-load-time-by-3-2/), describes an earlier version of this same idea: before WebAssembly matured, the engine was compiled to asm.js, a strict, highly-optimizable subset of JavaScript. Migrating that same C++ codebase to WebAssembly in 2017 cut load time by 3x, regardless of how large the document being opened actually was a meaningful jump that came from swapping the compilation target, not from rewriting the underlying engine itself.
+
+## Multiplayer: The Problem Google Docs Already Solved, Except Not Quite
+
+When Figma shipped multiplayer editing in 2016, the team faced a well-known problem in a genuinely different shape. Google Docs had already solved concurrent editing for text back in 2006, using a technique called Operational Transformation, or OT. Academic research had also produced Conflict-Free Replicated Data Types, or CRDTs, as a decentralized alternative. Figma's own engineering blog, in [How Figma's multiplayer technology works](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/), explains why neither option was a clean fit.
+
+A breakdown of the decision on [Sujeet Jaiswal's engineering blog](https://sujeet.pro/articles/figma-multiplayer-infrastructure) lays out the mismatch plainly: OT's classic approach defines operations by their character-level offsets in a linear text sequence a natural fit for a document editor, but a poor match for Figma's actual data. A Figma document is a tree of objects, each with potentially hundreds of properties, not a single flat sequence of characters. Trying to force design-tool edits through a system built for text offsets would have meant fighting the tool's own natural shape the entire time.
+
+Figma's own blog is candid about the other reason too: the team was small and needed to ship features quickly, and OT's formal correctness proofs are notoriously complicated and error-prone, even for algorithms handling only basic insert and delete operations on text. A young company betting its core feature on an algorithm that's difficult to reason about, debug, and get right the first time is a real risk, not just an academic inconvenience.
+
+## Neither OT Nor CRDT: A System Inspired by Both, Simpler Than Either
+
+Here's where the actual engineering decision gets interesting. Figma's own blog is explicit that their system isn't using true CRDTs, despite being inspired by them true CRDTs are designed for fully decentralized systems with no central authority deciding the final state, and that generality comes with real performance and memory overhead Figma didn't need, since Figma already has a central server for each document anyway.
+
+A summary on [Peerlist](https://peerlist.io/omjogani/articles/figmas-multiplayer-tech-summary) describes the practical version they landed on instead: every Figma document is a tree of objects, similar to the HTML DOM, where each object has a unique ID and a collection of properties. The conflict-resolution rule is deliberately narrow and simple different properties on the same object never conflict, different properties on different objects never conflict, and only the exact same property on the exact same object, edited by two people at once, counts as a real conflict. When that happens, the system falls back to a straightforward rule: keep whichever value the server received last, conceptually similar to a last-writer-wins register from the CRDT world.
+
+Two designers renaming two different layers at the same instant never collide different objects. One designer changing a rectangle's fill color while another repositions that same rectangle also never collides different properties on the same object. Only if both designers happen to change that rectangle's fill color in the same instant does the system need to pick a winner, and it just keeps whichever edit the server happened to receive last.
+
+```text
+Person A edits Object 1, property "fill"
+Person B edits Object 1, property "x-position"
+  → No conflict  different properties, same object
+
+Person A edits Object 1, property "fill" → red
+Person B edits Object 1, property "fill" → blue
+  → Conflict  same property, same object
+  → Server keeps whichever value arrived last
+```
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Conflicts+Only+Happen+at+the+Property+Level"
+  alt="Diagram of Figma's property-level conflict resolution rule"
+/>
+
+The same Sujeet Jaiswal breakdown calls out why this narrow scope was the right call rather than a shortcut: because most concurrent edits in a design tool naturally touch different objects or different properties, last-writer-wins at the property level ends up being both correct in practice and dramatically simpler to build than a general-purpose CRDT or OT system would have required. Matching the conflict-resolution model to how people actually collaborate in a design tool rather than importing a generic solution built for a different kind of document entirely is what let a small team ship something reliable quickly.
+
+## One Server Process Per Document
+
+Figma's own architecture, described on the [Architecture Guide](https://ggprompts.com/architecture/figma/), uses a client/server model where clients connect over WebSockets to a cluster of Rust servers and every multiplayer document gets its own dedicated server process, with every single person editing that document connecting to that same process.
+
+Two hundred people opening two hundred completely unrelated Figma files spin up two hundred lightweight, independent processes, each one only responsible for the small slice of state that its one document actually needs rather than a single shared process trying to juggle every open document in the company at once. A design team of eight people all working inside the same file share one process, and that process is the single source of truth resolving exactly the kind of property-level conflicts described above, for that document alone.
+
+Removing flickering was one deliberate refinement layered on top of this, according to the Peerlist summary mentioned earlier: the client discards property updates arriving from the server if a more recently made local change already exists for that same property, so an old, now-outdated network message can't suddenly overwrite something you just typed, creating a jarring visual flicker.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=One+Document%2C+One+Dedicated+Server+Process"
+  alt="Diagram of each document getting its own dedicated server process"
+/>
+
+## The Database Story: From One Giant Postgres Instance to a Fleet
+
+This is a genuinely dramatic scaling story, and Figma's own engineering blog tells it with unusual honesty about the dead ends along the way.
+
+Figma's own post on [how the databases team lived to tell the scale](https://www.figma.com/blog/how-figmas-databases-team-lived-to-tell-the-scale/) opens with a stark before-and-after: in 2020, Figma ran a single Postgres database, hosted on AWS's largest available physical instance. By the end of 2022, that had grown into a distributed architecture with caching, read replicas, and a dozen vertically partitioned databases a roughly 100x growth in the database stack over four years, driven by new features, a second product launching, and database traffic that was compounding at approximately 3x annually.
+
+Splitting a single overloaded database into logical groups moving all the tables related to "Figma files" into one database, and all the tables related to "Organizations" into another is called vertical partitioning, and the same post describes it as a relatively easy, high-impact lever that bought real runway quickly, while also serving as a deliberate stepping stone toward something much bigger: horizontal sharding.
+
+```text
+2020: One giant Postgres instance, AWS's largest available size
+  ↓ (vertical partitioning)
+One database becomes several, split by logical domain:
+  "Figma files" database | "Organizations" database | etc.
+  ↓ (horizontal sharding)
+Each logical domain further split across many physical shards,
+  scaling well beyond what one machine, however large, could hold
+```
+
+## The Roads Not Taken
+
+Here's a genuinely valuable, rarely-shared part of the story: a follow-up post, [The growing pains of database architecture](https://www.figma.com/blog/how-figma-scaled-to-multiple-databases/), walks through options the team seriously considered and rejected before landing on their eventual approach. A managed, Postgres-compatible NewSQL solution was one candidate but the team was wary of becoming one of the largest customers on that kind of platform, reasoning that being an early adopter at their scale meant absorbing scaling problems nobody else had hit yet, with little control over a managed system if something went wrong.
+
+Self-hosting a distributed database was the other alternative, and the same post is candid about why that got rejected too: Figma had relied on managed database solutions the whole time up to that point, so self-hosting would have meant a significant upfront investment in training and operational skills the team simply didn't have yet a large ongoing operational cost that would pull focus away from the more urgent, more existential problem of just staying ahead of scaling demands.
+
+Choosing neither path, and instead tailoring horizontal sharding specifically to Figma's own architecture, meant the team could get away with a much narrower feature set than a general-purpose distributed database would provide. The same post notes a specific, deliberate trade-off made along the way: they chose not to support atomic transactions across shards, because they could work around the occasional cross-shard transaction failure elsewhere in the stack accepting one real limitation in exchange for a system that fit their actual application far more precisely than an off-the-shelf solution would have.
+
+<img
+  src="https://placehold.co/1200x500/16213e/e5e5e5?text=Considered%2C+and+Deliberately+Rejected"
+  alt="Diagram of the managed NewSQL and self-hosted paths Figma considered and turned down"
+/>
+
+## Why Reversibility Mattered More Than Speed
+
+One design principle shows up repeatedly across Figma's database scaling posts, and it's worth calling out directly: the team picked a colocation strategy specifically to minimize the changes required at the application layer, supporting only the subset of Postgres compatible with the majority of their existing product logic. They also deliberately maintained backwards compatibility between the sharded and unsharded versions of Postgres throughout the migration meaning that if an unexpected problem showed up, they could roll back to the old, unsharded setup rather than being stuck mid-migration with no way back.
+
+Rebuilding the load-bearing wall of a house while people are still living inside it, and insisting the whole time that the original wall stays available as a fallback until you're completely certain the new one holds that's the level of caution baked into a database migration of this size, running underneath a product millions of people depend on daily.
+
+<img
+  src="https://placehold.co/1200x630/1a1a2e/ffffff?text=Every+Migration+Step+Stayed+Reversible"
+  alt="Closing illustration summarizing Figma's careful, reversible scaling approach"
+/>
+
+## Putting It Together
+
+None of the individual pieces here are exotic inventions on their own. Compiling C++ to run in a browser is a known technique. CRDTs and OT are both well-studied ideas in distributed systems. Vertical partitioning and horizontal sharding are common database scaling patterns. What makes Figma's engineering story compelling is the discipline behind each decision: building a custom renderer specifically because the browser's own pipeline wasn't fast enough, deliberately choosing a simpler conflict-resolution model over a more "correct" general-purpose one because it actually matched how designers collaborate, and scaling a database with a level of caution that treated reversibility as just as important as the destination.
+
+## What This Means Going Forward
+
+As Figma keeps expanding into more real-time, collaborative surfaces whiteboarding, prototyping, increasingly complex files with more objects and more simultaneous editors than the original multiplayer system was designed around the same questions keep resurfacing in new forms: how do you keep a rendering engine fast as documents keep growing, how do you keep a conflict-resolution model simple even as the kinds of things people collaborate on keep getting more complex, and how do you keep scaling a database without ever losing the ability to change your mind partway through. The lesson underneath Figma's story isn't really about WebAssembly, Rust, or Postgres specifically. It's the same one running through this entire series: the products that feel effortlessly fast and collaborative are usually sitting on top of an engineering team that refused to accept the "obvious" tool for the job, and built something narrower and better-fitted instead.
