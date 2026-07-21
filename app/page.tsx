@@ -5,6 +5,7 @@ import { ArrowUpRight } from "@/components/phosphor";
 import { RecentArticles } from "@/components/recent-articles";
 import { Metadata } from "next";
 import Script from "next/script";
+import NextLink from "next/link";
 
 export const metadata: Metadata = {
   title: "InsideTheStack | How Modern Software & Platforms Work",
@@ -89,13 +90,12 @@ export default function Home() {
         </div>
       </h1>
       <div className="flex gap-3">
-        <a
+        <NextLink
           className="button button--primary button--md rounded-full"
           href="/articles"
-          rel="noopener noreferrer"
         >
           Explore Articles <ArrowUpRight size={32} />
-        </a>
+        </NextLink>
         <a
           className="button button--tertiary button--md rounded-full"
           href={siteConfig.links.github}

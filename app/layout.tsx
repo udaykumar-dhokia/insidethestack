@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://udaykumar-dhokia.github.io/insidethestack"),
@@ -117,6 +118,19 @@ export default function RootLayout({
           </div>
         </Providers>
         <GoogleAnalytics gaId="G-XPLRX6HBKB" />
+        <Script
+          id="schema-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "InsideTheStack",
+              "alternateName": ["Inside The Stack", "InsideTheStack Blog"],
+              "url": "https://udaykumar-dhokia.github.io/insidethestack"
+            })
+          }}
+        />
       </body>
     </html>
   );
