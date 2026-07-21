@@ -281,13 +281,11 @@ export default function SignupPage() {
             <Card.Footer className="flex justify-center px-8 pb-8 pt-0">
               <p className="text-sm text-muted">
                 Already have an account?{" "}
-                <NextLink href="/login">
-                  <Link
-                    className="text-accent font-medium hover:text-accent/80 transition-colors"
-                    href="/login"
-                  >
-                    Sign in
-                  </Link>
+                <NextLink
+                  className="text-accent font-medium hover:text-accent/80 transition-colors"
+                  href="/login"
+                >
+                  Sign in
                 </NextLink>
               </p>
             </Card.Footer>

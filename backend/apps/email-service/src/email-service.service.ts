@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 
 export interface SendOtpPayload {
   to: string;
@@ -10,18 +10,51 @@ export interface SendOtpPayload {
 @Injectable()
 export class EmailServiceService {
   private readonly logger = new Logger(EmailServiceService.name);
-  private readonly transporter: nodemailer.Transporter;
+  private readonly oauth2Client;
+  private readonly gmail;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+    this.oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'https://developers.google.com/oauthplayground', // Often used as the redirect URL when obtaining refresh tokens manually
+    );
+
+    this.oauth2Client.setCredentials({
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
     });
+
+    this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+  }
+
+  /**
+   * Gmail API requires the raw email message to be Base64URL encoded
+   */
+  private encodeMessage(message: string): string {
+    return Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  /**
+   * Construct an RFC 2822 compliant email string
+   */
+  private createRawMessage(to: string, subject: string, html: string): string {
+    const from = process.env.GOOGLE_USER; // E.g. "noreply@insidethestack.com" or your gmail address
+    
+    const str = [
+      `To: ${to}`,
+      `From: InsideTheStack <${from}>`,
+      `Subject: =?utf-8?B?${Buffer.from(subject).toString('base64')}?=`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      html,
+    ].join('\r\n');
+
+    return this.encodeMessage(str);
   }
 
   async sendOtpEmail(payload: SendOtpPayload): Promise<void> {
@@ -98,15 +131,19 @@ export class EmailServiceService {
     `;
 
     try {
-      await this.transporter.sendMail({
-        from: `"InsideTheStack" <${process.env.SMTP_USER}>`,
-        to,
-        subject: `${otp} is your InsideTheStack verification code`,
-        html,
+      const subject = `${otp} is your InsideTheStack verification code`;
+      const raw = this.createRawMessage(to, subject, html);
+      
+      await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: raw,
+        },
       });
-      this.logger.log(`OTP email sent to ${to}`);
+
+      this.logger.log(`OTP email sent to ${to} via Gmail API`);
     } catch (err) {
-      this.logger.error(`Failed to send OTP email to ${to}`, err);
+      this.logger.error(`Failed to send OTP email to ${to} via Gmail API`, err);
       throw err;
     }
   }
@@ -114,15 +151,18 @@ export class EmailServiceService {
   /** Generic email sender (kept for other use-cases) */
   async sendEmail(data: { to: string; subject: string; html: string }) {
     try {
-      await this.transporter.sendMail({
-        from: `"InsideTheStack" <${process.env.SMTP_USER}>`,
-        to: data.to,
-        subject: data.subject,
-        html: data.html,
+      const raw = this.createRawMessage(data.to, data.subject, data.html);
+      
+      await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: raw,
+        },
       });
-      this.logger.log(`Email sent to ${data.to} — subject: ${data.subject}`);
+      
+      this.logger.log(`Email sent to ${data.to} via Gmail API — subject: ${data.subject}`);
     } catch (err) {
-      this.logger.error(`Failed to send email to ${data.to}`, err);
+      this.logger.error(`Failed to send email to ${data.to} via Gmail API`, err);
       throw err;
     }
   }

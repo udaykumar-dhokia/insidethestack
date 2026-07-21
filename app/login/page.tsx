@@ -116,13 +116,11 @@ export default function LoginPage() {
           <Card.Footer className="flex justify-center px-8 pb-8 pt-0">
             <p className="text-sm text-muted">
               Don&apos;t have an account?{" "}
-              <NextLink href="/signup">
-                <Link
-                  className="text-accent font-medium hover:text-accent/80 transition-colors"
-                  href="/signup"
-                >
-                  Sign up for free
-                </Link>
+              <NextLink 
+                className="text-accent font-medium hover:text-accent/80 transition-colors"
+                href="/signup"
+              >
+                Sign up for free
               </NextLink>
             </p>
           </Card.Footer>
