@@ -52,6 +52,17 @@ export class ArticlesController {
     return this.articlesService.findOneBySlug(slug);
   }
 
+  @Get(':slug/stats')
+  @ApiOperation({
+    summary: 'Get article stats by slug',
+    description: 'Returns only the likes and views count for an article.',
+  })
+  @ApiOkResponse({ description: 'Stats retrieved successfully.' })
+  @ApiNotFoundResponse({ description: 'Article not found.' })
+  getStats(@Param('slug') slug: string) {
+    return this.articlesService.getStats(slug);
+  }
+
   @Post(':slug/view')
   @ApiOperation({
     summary: 'Record a unique view for an article',

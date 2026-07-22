@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { components, slugify } from '@/components/mdx-components';
 import { FloatingActionButtons } from '@/components/floating-action-buttons';
-import { HeartFilledIcon } from '@/components/icons';
+import { HeartFilledIcon, EyeIcon } from '@/components/icons';
 import { StickyTableOfContents } from '@/components/sticky-toc';
 import { ReadingProgress } from '@/components/reading-progress';
 import { GiscusComments } from '@/components/giscus';
+import { CardStats } from '@/components/card-stats';
 import { Metadata } from 'next';
 import { ArticleViewTracker } from '@/components/article-view-tracker';
 import Image from 'next/image';
@@ -297,10 +298,11 @@ export default async function ArticlePage({ params }: Props) {
                     <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{related.meta.title}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2">{related.meta.description}</p>
                     <div className="pt-4 flex justify-end items-center mt-auto">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                        <HeartFilledIcon className="w-4 h-4 text-red-500" />
-                        <span>{related.likes_count || 0}</span>
-                      </div>
+                      <CardStats 
+                        slug={related.slug} 
+                        initialLikes={related.likes_count || 0} 
+                        initialViews={related.views_count || 0} 
+                      />
                     </div>
                   </div>
                 </Link>

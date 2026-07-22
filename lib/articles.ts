@@ -84,23 +84,23 @@ function mapApiArticleToLocal(item: any): Article {
 export async function getArticlesFromApi(): Promise<Article[]> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/articles?limit=100`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
+    if (!res.ok) throw new Error(`API responded with status: ${res.status}`);
     const data = await res.json();
     return (data.items || []).map(mapApiArticleToLocal);
   } catch (error) {
-    console.error("Failed to fetch articles from API", error);
-    return [];
+    console.warn("⚠️ Failed to fetch articles from API, falling back to local MDX files.", (error as Error).message);
+    return getAllArticles();
   }
 }
 
 export async function getArticleBySlugFromApi(slug: string): Promise<Article | null> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000'}/articles/${slug}`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error(`API responded with status: ${res.status}`);
     const item = await res.json();
     return mapApiArticleToLocal(item);
   } catch (error) {
-    console.error(`Failed to fetch article ${slug} from API`, error);
-    return null;
+    console.warn(`⚠️ Failed to fetch article ${slug} from API, falling back to local MDX files.`, (error as Error).message);
+    return getArticleBySlug(slug);
   }
 }

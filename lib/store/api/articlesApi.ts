@@ -11,6 +11,9 @@ export const articlesApi = baseApi.injectEndpoints({
     getArticleBySlug: builder.query({
       query: (slug: string) => `/articles/${slug}`,
     }),
+    getArticleStats: builder.query({
+      query: (slug: string) => `/articles/${slug}/stats`,
+    }),
     createArticle: builder.mutation({
       query: (body) => ({
         url: "/articles",
@@ -21,4 +24,4 @@ export const articlesApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetArticlesQuery, useGetArticleBySlugQuery, useCreateArticleMutation } = articlesApi;
+export const { useGetArticlesQuery, useGetArticleBySlugQuery, useGetArticleStatsQuery, useCreateArticleMutation } = articlesApi;

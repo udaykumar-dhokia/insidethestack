@@ -78,6 +78,19 @@ export class ArticlesService {
     return article;
   }
 
+  async getStats(slug: string) {
+    const article = await this.prisma.posts.findUnique({
+      where: { slug },
+      select: { likes_count: true, views_count: true },
+    });
+
+    if (!article) {
+      throw new NotFoundException(`Article with slug ${slug} not found`);
+    }
+
+    return article;
+  }
+
   async create(createArticleDto: CreateArticleDto, userId: string) {
     const slug =
       createArticleDto.title

@@ -4,8 +4,9 @@ import { useState, useMemo, Suspense, useEffect } from "react";
 import type { Article } from "@/lib/articles";
 
 import NextLink from "next/link";
-import { SearchIcon, HeartFilledIcon } from "@/components/icons";
+import { SearchIcon } from "@/components/icons";
 import { useSearchParams } from "next/navigation";
+import { CardStats } from "@/components/card-stats";
 
 interface ArticlesExplorerProps {
   articles: Article[];
@@ -101,10 +102,11 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                  <HeartFilledIcon className="w-4 h-4 text-red-500" />
-                  <span>{article.likes_count || 0}</span>
-                </div>
+                <CardStats 
+                  slug={article.slug} 
+                  initialLikes={article.likes_count || 0} 
+                  initialViews={article.views_count || 0} 
+                />
               </div>
             </NextLink>
           ))}

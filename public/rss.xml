@@ -8,6 +8,13 @@
     <atom:link href="https://udaykumar-dhokia.github.io/insidethestack/rss.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title><![CDATA[How WhatsApp Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-whatsapp-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-whatsapp-works</guid>
+      <pubDate>Wed, 22 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into WhatsApp's architecture, the decades-old telecom language behind its massive concurrency, the 'let it crash' philosophy that keeps it running through failures, and how a team of around 50 engineers served hundreds of millions of users.]]></description>
+    </item>
+    <item>
       <title><![CDATA[How Figma Actually Works]]></title>
       <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-figma-works</link>
       <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-figma-works</guid>
