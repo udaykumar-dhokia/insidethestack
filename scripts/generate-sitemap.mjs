@@ -36,7 +36,7 @@ function toISOString(dateStr) {
 function buildSitemapXml(articles) {
   const staticPages = [
     { url: `${baseUrl}/`, lastmod: BUILD_DATE.toISOString() },
-    { url: `${baseUrl}/articles/`, lastmod: BUILD_DATE.toISOString() },
+    { url: `${baseUrl}/insidethestack/`, lastmod: BUILD_DATE.toISOString() },
     { url: `${baseUrl}/about/`, lastmod: BUILD_DATE.toISOString() },
     { url: `${baseUrl}/pricing/`, lastmod: BUILD_DATE.toISOString() },
     { url: `${baseUrl}/blog/`, lastmod: BUILD_DATE.toISOString() },
@@ -44,7 +44,7 @@ function buildSitemapXml(articles) {
   ];
 
   const articleEntries = articles.map((article) => ({
-    url: `${baseUrl}/articles/${article.slug}`,
+    url: `${baseUrl}/insidethestack/${article.slug}`,
     lastmod: toISOString(article.published_at || BUILD_DATE),
   }));
 
@@ -86,7 +86,7 @@ async function main() {
   // --- RSS GENERATION ---
   console.log("📰  Generating rss.xml...");
   const rssItems = articles.map(article => {
-    const articleUrl = `${baseUrl}/articles/${article.slug}`;
+    const articleUrl = `${baseUrl}/insidethestack/${article.slug}`;
     const pubDate = new Date(article.published_at || BUILD_DATE).toUTCString();
     return `
     <item>
@@ -101,7 +101,7 @@ async function main() {
   const rss = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>InsideTheStack</title>
+    <title>coDecode</title>
     <link>${baseUrl}</link>
     <description>Deep dives into software architecture, system design, and the tools developers love.</description>
     <language>en-us</language>

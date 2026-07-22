@@ -23,7 +23,7 @@ export const Footer = () => {
             <NextLink href="/" className="hover:text-foreground transition-colors">
               Home
             </NextLink>
-            <NextLink href="/articles" className="hover:text-foreground transition-colors">
+            <NextLink href="/insidethestack" className="hover:text-foreground transition-colors">
               Articles
             </NextLink>
             <a 

@@ -8,19 +8,19 @@ import Script from "next/script";
 import NextLink from "next/link";
 
 export const metadata: Metadata = {
-  title: "InsideTheStack | How Modern Software & Platforms Work",
+  title: "coDecode | Code. Decode. Master Software Engineering.",
   description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
   alternates: {
     canonical: "https://udaykumar-dhokia.github.io/insidethestack",
   },
   openGraph: {
-    title: "InsideTheStack | How Modern Software & Platforms Work",
+    title: "coDecode | Code. Decode. Master Software Engineering.",
     description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
     url: "https://udaykumar-dhokia.github.io/insidethestack",
     type: "website",
   },
   twitter: {
-    title: "InsideTheStack | How Modern Software & Platforms Work",
+    title: "coDecode | Code. Decode. Master Software Engineering.",
     description: "Discover how the world's biggest software platforms are built. Learn how modern applications work under the hood with deep architectural breakdowns, system design, and cloud engineering.",
   }
 };
@@ -33,7 +33,7 @@ export default function Home() {
         '@type': 'WebSite',
         '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#website',
         url: 'https://udaykumar-dhokia.github.io/insidethestack',
-        name: 'InsideTheStack',
+        name: 'coDecode',
         description: siteConfig.description,
         publisher: {
           '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#organization'
@@ -43,7 +43,7 @@ export default function Home() {
             '@type': 'SearchAction',
             target: {
               '@type': 'EntryPoint',
-              urlTemplate: 'https://udaykumar-dhokia.github.io/insidethestack/articles?query={search_term_string}'
+              urlTemplate: 'https://udaykumar-dhokia.github.io/insidethestack/insidethestack?query={search_term_string}'
             },
             'query-input': 'required name=search_term_string'
           }
@@ -53,13 +53,13 @@ export default function Home() {
       {
         '@type': 'Organization',
         '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#organization',
-        name: 'InsideTheStack',
+        name: 'coDecode',
         url: 'https://udaykumar-dhokia.github.io/insidethestack',
         logo: {
           '@type': 'ImageObject',
           '@id': 'https://udaykumar-dhokia.github.io/insidethestack/#logo',
           url: 'https://udaykumar-dhokia.github.io/insidethestack/favicon.ico',
-          caption: 'InsideTheStack'
+          caption: 'coDecode'
         },
         sameAs: [
           siteConfig.links.github,
@@ -77,24 +77,21 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <h1 className="inline-block max-w-4xl text-center justify-center">
-        <span className={title()}>Discover&nbsp;</span>
-        <span className={title({ color: "blue" })}>How&nbsp;</span>
-        <span className={title()}>the World's Biggest</span>
+        <span className={title()}>Code.&nbsp;</span>
+        <span className={title({ color: "blue" })}>Decode.&nbsp;</span>
         <br />
-        <span className={title()}>Software Platforms Are Built.</span>
+        <span className={title()}>Master Software Engineering.</span>
 
         <div className={subtitle({ class: "mt-6" })}>
-          Deep dives into the architecture, infrastructure, and engineering
-          decisions behind products like ChatGPT, Netflix, WhatsApp, GitHub,
-          Stripe, Vercel, and more.
+          The ultimate platform for developers. Master data structures, build your algorithms rhythm, and reverse-engineer the architecture of the world's biggest platforms.
         </div>
       </h1>
       <div className="flex gap-3">
         <NextLink
           className="button button--primary button--md rounded-full"
-          href="/articles"
+          href="/insidethestack"
         >
-          Explore Articles <ArrowUpRight size={32} />
+          Explore InsideTheStack <ArrowUpRight size={32} />
         </NextLink>
         <a
           className="button button--tertiary button--md rounded-full"
@@ -109,25 +106,26 @@ export default function Home() {
 
       <div className="mt-16 max-w-4xl text-left flex flex-col gap-6 text-lg text-muted-foreground">
         <p>
-          Welcome to <strong>InsideTheStack</strong>, your premier destination to discover how the world's biggest software platforms are built. 
-          Understanding the architecture and system design of massively successful products is the key to leveling up as a software engineer.
+          Welcome to <strong>coDecode</strong>, your premier ecosystem to master the art of software engineering. 
+          Whether you are preparing for a system design interview, practicing your algorithms, or simply curious about infrastructure choices, you will find everything you need right here.
         </p>
         <p>
-          Whether you are preparing for a system design interview, building scalable microservices, or simply curious about the infrastructure 
-          choices made by engineering teams at companies like Netflix, WhatsApp, Stripe, and Vercel, you will find comprehensive deep dives here. 
-          We break down complex engineering concepts into digestible, actionable insights.
+          Dive into <strong>InsideTheStack</strong> to demystify software architecture and explore the tradeoffs behind different databases and distributed systems built by engineering teams at companies like Netflix, WhatsApp, and Stripe.
         </p>
         <p>
-          Our mission is to demystify software architecture. We explore the tradeoffs behind different databases, the nuances of distributed systems, 
-          and the evolution of tech stacks over time. Dive into our latest articles below to explore how industry-leading platforms tackle 
-          unprecedented scale and reliability challenges every single day.
+          Stay tuned for our upcoming <strong>DSA Mastery App</strong> to leverage spaced repetition and supercharge your algorithmic problem-solving skills for your next technical interview!
         </p>
       </div>
 
       <div className="mt-16 w-full">
-        <h2 className="text-2xl font-bold mb-8 text-left border-b border-divider pb-2">
-          Recent Articles
-        </h2>
+        <div className="flex justify-between items-end mb-6 border-b border-divider pb-2">
+          <h2 className="text-2xl font-bold text-left">
+            Recent Articles
+          </h2>
+          <NextLink href="/insidethestack" className="text-primary hover:underline font-medium flex items-center gap-1 mb-1">
+            Explore InsideTheStack <ArrowUpRight size={20} />
+          </NextLink>
+        </div>
         <RecentArticles />
       </div>
     </section>

@@ -1,16 +1,16 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "InsideTheStack",
-  description: "Discover How the World's Biggest Software Platforms Are Built.",
+  name: "coDecode",
+  description: "Code. Decode. Master the art of software engineering.",
   navItems: [
     {
       label: "Home",
       href: "/",
     },
     {
-      label: "Articles",
-      href: "/articles",
+      label: "InsideTheStack",
+      href: "/insidethestack",
     },
   ],
   navMenuItems: [
@@ -19,8 +19,8 @@ export const siteConfig = {
       href: "/",
     },
     {
-      label: "Articles",
-      href: "/articles",
+      label: "InsideTheStack",
+      href: "/insidethestack",
     },
   ],
   links: {

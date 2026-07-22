@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { ArticlesModule } from './articles/articles.module';
 import { LikesModule } from './likes/likes.module';
 import { UploadModule } from './upload/upload.module';
+import { AlgorhythmModule } from './algorhythm/algorhythm.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UploadModule } from './upload/upload.module';
     ArticlesModule,
     LikesModule,
     UploadModule,
+    AlgorhythmModule,
   ],
   controllers: [AppController],
   providers: [AppService],

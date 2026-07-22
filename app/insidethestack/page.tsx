@@ -4,19 +4,19 @@ import { Metadata } from "next";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
+  title: "Explore InsideTheStack | System Architecture | coDecode",
   description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
   alternates: {
-    canonical: "https://udaykumar-dhokia.github.io/insidethestack/articles",
+    canonical: "https://udaykumar-dhokia.github.io/insidethestack/insidethestack",
   },
   openGraph: {
-    title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
+    title: "Explore InsideTheStack | System Architecture | coDecode",
     description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
-    url: "https://udaykumar-dhokia.github.io/insidethestack/articles",
+    url: "https://udaykumar-dhokia.github.io/insidethestack/insidethestack",
     type: "website",
   },
   twitter: {
-    title: "Explore How Modern Software Works | System Architecture | InsideTheStack",
+    title: "Explore InsideTheStack | System Architecture | coDecode",
     description: "Browse comprehensive architectural deep dives and case studies on how the world's biggest software platforms are built.",
   }
 };
@@ -38,7 +38,7 @@ export default async function ArticlesPage() {
         '@type': 'ListItem',
         position: 2,
         name: 'Articles',
-        item: 'https://udaykumar-dhokia.github.io/insidethestack/articles',
+        item: 'https://udaykumar-dhokia.github.io/insidethestack/insidethestack',
       },
     ],
   };

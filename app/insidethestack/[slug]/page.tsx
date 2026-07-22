@@ -35,24 +35,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (article.meta.subCategory) keywords.push(article.meta.subCategory);
 
   return {
-    title: `${article.meta.title} | InsideTheStack`,
+    title: `${article.meta.title} | coDecode`,
     description: article.meta.description,
     keywords: keywords,
     alternates: {
-      canonical: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+      canonical: `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}`,
     },
     openGraph: {
-      title: `${article.meta.title} | InsideTheStack`,
+      title: `${article.meta.title} | coDecode`,
       description: article.meta.description,
       type: 'article',
-      url: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+      url: `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}`,
       publishedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
       modifiedTime: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
       authors: ['https://github.com/udaykumar-dhokia'],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${article.meta.title} | InsideTheStack`,
+      title: `${article.meta.title} | coDecode`,
       description: article.meta.description,
       creator: '@udaykumardhokia',
     },
@@ -144,13 +144,13 @@ export default async function ArticlePage({ params }: Props) {
     '@graph': [
       {
         '@type': 'TechArticle',
-        '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#article`,
+        '@id': `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}#article`,
         headline: article.meta.title,
         description: article.meta.description,
         image: article.meta.image ? [article.meta.image] : [],
         datePublished: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
         dateModified: article.meta.date ? new Date(article.meta.date).toISOString() : undefined,
-        mainEntityOfPage: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+        mainEntityOfPage: `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}`,
         author: {
           '@type': 'Person',
           name: article.meta.author || 'udthedeveloper',
@@ -158,7 +158,7 @@ export default async function ArticlePage({ params }: Props) {
         },
         publisher: {
           '@type': 'Organization',
-          name: 'InsideTheStack',
+          name: 'coDecode',
           url: 'https://udaykumar-dhokia.github.io/insidethestack',
           logo: {
             '@type': 'ImageObject',
@@ -173,7 +173,7 @@ export default async function ArticlePage({ params }: Props) {
       },
       {
         '@type': 'BreadcrumbList',
-        '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#breadcrumb`,
+        '@id': `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}#breadcrumb`,
         itemListElement: [
           {
             '@type': 'ListItem',
@@ -185,13 +185,13 @@ export default async function ArticlePage({ params }: Props) {
             '@type': 'ListItem',
             position: 2,
             name: 'Articles',
-            item: 'https://udaykumar-dhokia.github.io/insidethestack/articles',
+            item: 'https://udaykumar-dhokia.github.io/insidethestack/insidethestack',
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: article.meta.title,
-            item: `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}`,
+            item: `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}`,
           },
         ],
       }
@@ -201,7 +201,7 @@ export default async function ArticlePage({ params }: Props) {
   if (faqItems.length > 0) {
     jsonLd['@graph'].push({
       '@type': 'FAQPage',
-      '@id': `https://udaykumar-dhokia.github.io/insidethestack/articles/${article.slug}#faq`,
+      '@id': `https://udaykumar-dhokia.github.io/insidethestack/insidethestack/${article.slug}#faq`,
       mainEntity: faqItems
     });
   }
@@ -280,7 +280,7 @@ export default async function ArticlePage({ params }: Props) {
               {relatedArticles.map(related => (
                 <Link 
                   key={related.slug} 
-                  href={`/articles/${related.slug}`}
+                  href={`/insidethestack/${related.slug}`}
                   className="group bg-content2 border border-divider rounded-xl overflow-hidden hover:border-primary transition-colors flex flex-col h-full shadow-sm"
                 >
                   {related.meta.image && (

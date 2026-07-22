@@ -13,6 +13,7 @@ import {
   Skeleton,
 } from "@heroui/react";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
@@ -28,6 +29,7 @@ export const Navbar = () => {
   const [mounted, setMounted] = useState(false);
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
@@ -152,22 +154,27 @@ export const Navbar = () => {
       <header className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-4">
           <NextLink className="flex items-center gap-1" href="/">
-            <p className="font-bold text-inherit">InsideTheStack</p>
+            <p className="font-bold text-inherit text-xl tracking-tight">co<span className="text-primary">Decode</span></p>
           </NextLink>
           <ul className="hidden lg:flex gap-4 ml-2">
-            {siteConfig.navItems.map((item) => (
-              <li key={item.href}>
-                <NextLink
-                  className={clsx(
-                    "text-foreground hover:text-accent transition-colors",
-                    "data-[active=true]:text-accent data-[active=true]:font-medium",
-                  )}
-                  href={item.href}
-                >
-                  {item.label}
-                </NextLink>
-              </li>
-            ))}
+            {siteConfig.navItems.map((item) => {
+              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  <NextLink
+                    className={clsx(
+                      "transition-colors",
+                      isActive 
+                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold" 
+                        : "text-foreground hover:text-primary",
+                    )}
+                    href={item.href}
+                  >
+                    {item.label}
+                  </NextLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -214,19 +221,24 @@ export const Navbar = () => {
       {isMenuOpen && (
         <div className="border-t border-separator sm:hidden">
           <ul className="flex flex-col gap-2 px-4 pb-4">
-            {siteConfig.navMenuItems.map((item, index) => (
-              <li key={`${item.label}-${index}`}>
-                <Link
-                  className={clsx(
-                    "block py-2 text-lg no-underline",
-                    index === 2 ? "text-accent" : "text-foreground",
-                  )}
-                  href="#"
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {siteConfig.navMenuItems.map((item, index) => {
+              const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              return (
+                <li key={`${item.label}-${index}`}>
+                  <Link
+                    className={clsx(
+                      "block py-2 text-lg no-underline",
+                      isActive 
+                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold" 
+                        : "text-foreground",
+                    )}
+                    href={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

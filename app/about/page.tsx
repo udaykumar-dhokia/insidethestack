@@ -46,7 +46,7 @@ export default function AboutPage() {
 
         <h2 className="text-2xl font-bold mt-8 text-foreground">Get Involved</h2>
         <p>
-          InsideTheStack is built for developers, system designers, architects, and engineering managers. Check out our <a href="/articles" className="text-primary hover:underline">latest articles</a> to start learning, or connect with us on <a href="https://github.com/udaykumar-dhokia" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub</a>.
+          InsideTheStack is built for developers, system designers, architects, and engineering managers. Check out our <a href="/insidethestack" className="text-primary hover:underline">latest articles</a> to start learning, or connect with us on <a href="https://github.com/udaykumar-dhokia" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub</a>.
         </p>
       </section>
     </article>

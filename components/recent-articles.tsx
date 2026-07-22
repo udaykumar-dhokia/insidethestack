@@ -21,7 +21,7 @@ export async function RecentArticles() {
       {recent.map((article: any) => (
         <NextLink
           key={article.slug}
-          href={`/articles/${article.slug}`}
+          href={`/insidethestack/${article.slug}`}
           className="bg-surface shadow-surface border border-divider rounded-2xl flex flex-col items-start h-full p-4 w-full justify-between hover:bg-surface/80 hover:-translate-y-1 transition-all duration-200"
         >
           <div className="flex flex-col gap-3 h-full w-full">

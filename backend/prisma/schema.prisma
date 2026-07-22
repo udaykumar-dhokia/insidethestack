@@ -36,7 +36,8 @@ model User {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  likes      Likes[]
+  likes        Likes[]
+  algoProgress AlgoProgress[]
 }
 
 model Social {
@@ -127,4 +128,51 @@ model ArticleView {
   created_at DateTime @default(now())
 
   @@index([slug, viewerHash])
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ProgressStatus {
+  UNSEEN
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+model AlgoQuestion {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  difficulty  Difficulty
+  topic       String     
+  leetcodeUrl String
+  
+  progress    AlgoProgress[]
+  
+  created_at  DateTime @default(now())
+}
+
+model AlgoProgress {
+  id               String   @id @default(uuid())
+  user_id          String
+  user             User     @relation(fields: [user_id], references: [id])
+  
+  question_id      String
+  question         AlgoQuestion @relation(fields: [question_id], references: [id])
+  
+  status           ProgressStatus @default(UNSEEN)
+  
+  next_review_date DateTime? 
+  interval_days    Int      @default(0)
+  ease_factor      Float    @default(2.5)
+  review_count     Int      @default(0)
+
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@unique([user_id, question_id])
 }

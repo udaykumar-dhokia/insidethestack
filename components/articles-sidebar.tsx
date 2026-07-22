@@ -60,7 +60,7 @@ export function ArticlesSidebar({ articles }: ArticlesSidebarProps) {
         <div className={`${isOpen ? 'flex' : 'hidden'} md:flex flex-col gap-4 bg-content2 md:bg-transparent p-4 md:p-0 rounded-xl border border-divider md:border-none shadow-sm md:shadow-none mb-6 md:mb-0`}>
           <h2 className="hidden md:block text-xl font-bold">Categories</h2>
           <NextLink
-            href="/articles"
+            href="/insidethestack"
             className={`font-medium transition-colors ${isAllActive ? 'text-primary' : 'text-foreground/70 hover:text-foreground'}`}
           >
             All Articles

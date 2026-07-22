@@ -52,7 +52,7 @@ export default function PricingPage() {
             </ul>
           </div>
           <a
-            href="/articles"
+            href="/insidethestack"
             className="w-full text-center bg-foreground text-background font-medium py-2.5 rounded-lg hover:opacity-90 transition-opacity"
           >
             Read Articles

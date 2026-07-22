@@ -60,7 +60,7 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
               type="text"
               aria-label="Search articles"
               className="w-full bg-surface shadow-surface rounded-lg py-2 pl-10 pr-4 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary border border-divider"
-              placeholder="Search articles..."
+              placeholder="Search InsideTheStack..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -77,7 +77,7 @@ function ExplorerContent({ articles }: ArticlesExplorerProps) {
           {filteredArticles.map((article) => (
             <NextLink 
               key={article.slug} 
-              href={`/articles/${article.slug}`} 
+              href={`/insidethestack/${article.slug}`} 
               className="bg-surface shadow-surface border border-divider rounded-2xl flex flex-col items-start h-full p-4 w-full justify-between hover:bg-surface/80 hover:-translate-y-1 transition-all duration-200"
             >
               <div className="flex flex-col gap-3 h-full w-full text-left">

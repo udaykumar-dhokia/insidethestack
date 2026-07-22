@@ -40,7 +40,7 @@ export default function BlogPage() {
           <h3 className="text-lg font-semibold mb-2">More updates coming soon!</h3>
           <p className="text-muted-foreground text-sm">
             We are working on detailed write-ups about cloud hosting migration, performance fine-tuning, and new platform breakdowns. 
-            Check back weekly, or explore our <a href="/articles" className="text-primary hover:underline">main articles explorer</a>.
+            Check back weekly, or explore our <a href="/insidethestack" className="text-primary hover:underline">main articles explorer</a>.
           </p>
         </div>
       </section>

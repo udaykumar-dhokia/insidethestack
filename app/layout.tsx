@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "udthedeveloper", url: "https://github.com/udaykumar-dhokia" }],
   creator: "udthedeveloper",
-  publisher: "InsideTheStack",
+  publisher: "coDecode",
   formatDetection: {
     email: false,
     address: false,
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
         url: "/favicon.ico",
         width: 32,
         height: 32,
-        alt: "InsideTheStack Logo",
+        alt: "coDecode Logo",
       }
     ],
   },
@@ -125,8 +125,8 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "InsideTheStack",
-              "alternateName": ["Inside The Stack", "InsideTheStack Blog"],
+              "name": "coDecode",
+              "alternateName": ["coDecode", "coDecode App"],
               "url": "https://udaykumar-dhokia.github.io/insidethestack"
             })
           }}
