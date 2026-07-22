@@ -22,6 +22,7 @@ export interface Article {
   meta: ArticleMeta;
   content: string;
   likes_count?: number;
+  views_count?: number;
 }
 
 export function getArticleBySlug(slug: string): Article | null {
@@ -66,6 +67,7 @@ function mapApiArticleToLocal(item: any): Article {
     slug: item.slug,
     content: item.content,
     likes_count: item.likes_count,
+    views_count: item.views_count,
     meta: {
       title: item.title,
       description: item.description,

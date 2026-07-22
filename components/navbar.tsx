@@ -113,11 +113,6 @@ export const Navbar = () => {
     if (isAuthenticated) {
       return (
         <div className="flex items-center gap-3 ml-2">
-          <NextLink href="/create">
-            <Button size="sm" variant="primary">
-              <PlusIcon /> Create Post
-            </Button>
-          </NextLink>
           <UserMenu />
         </div>
       );
@@ -138,11 +133,6 @@ export const Navbar = () => {
     if (isAuthenticated) {
       return (
         <div className="flex items-center gap-2">
-          <NextLink href="/create">
-            <Button size="sm" variant="outline">
-              Create
-            </Button>
-          </NextLink>
           <UserMenu />
         </div>
       );

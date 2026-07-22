@@ -96,4 +96,46 @@ export class ArticlesService {
       },
     });
   }
+
+  async recordView(slug: string, viewerHash: string) {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Check if this user hash has viewed this article in the last 24 hours
+    const existingView = await this.prisma.articleView.findFirst({
+      where: {
+        slug,
+        viewerHash,
+        created_at: {
+          gte: twentyFourHoursAgo,
+        },
+      },
+    });
+
+    if (existingView) {
+      // Already viewed recently, just return current count without incrementing
+      const article = await this.prisma.posts.findUnique({
+        where: { slug },
+        select: { views_count: true },
+      });
+      return { views_count: article?.views_count || 0, recorded: false };
+    }
+
+    // Insert new view record and increment total count
+    await this.prisma.articleView.create({
+      data: {
+        slug,
+        viewerHash,
+      },
+    });
+
+    const updatedArticle = await this.prisma.posts.update({
+      where: { slug },
+      data: {
+        views_count: { increment: 1 },
+      },
+      select: { views_count: true },
+    });
+
+    return { views_count: updatedArticle.views_count, recorded: true };
+  }
 }

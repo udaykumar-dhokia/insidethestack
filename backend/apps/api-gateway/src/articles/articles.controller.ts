@@ -51,4 +51,25 @@ export class ArticlesController {
   findOneBySlug(@Param('slug') slug: string) {
     return this.articlesService.findOneBySlug(slug);
   }
+
+  @Post(':slug/view')
+  @ApiOperation({
+    summary: 'Record a unique view for an article',
+    description: 'Uses IP and User-Agent hashing to prevent duplicate counting within 24 hours.',
+  })
+  @ApiOkResponse({ description: 'View recorded successfully (or skipped if recent).' })
+  async recordView(@Param('slug') slug: string, @Req() req: any) {
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+    const secret = process.env.JWT_SECRET || 'fallback-secret';
+    
+    // Node.js crypto module to hash the viewer details
+    const crypto = require('crypto');
+    const viewerHash = crypto
+      .createHash('sha256')
+      .update(`${ip}-${userAgent}-${secret}`)
+      .digest('hex');
+
+    return this.articlesService.recordView(slug, viewerHash);
+  }
 }

@@ -19,6 +19,7 @@ enum Category {
   PRODUCTIVITY
   DEVOPS_INFRASTRUCTURE
   AUTOMATION
+  COMMUNICATION
 }
 
 model User {
@@ -71,6 +72,7 @@ model Posts {
   published_at DateTime?
 
   likes_count Int        @default(0)
+  views_count Int        @default(0)
   comments    Comments[]
 
   created_at DateTime @default(now())
@@ -116,4 +118,13 @@ model OtpRequest {
   password   String
   expires_at DateTime
   created_at DateTime @default(now())
+}
+
+model ArticleView {
+  id         String   @id @default(uuid())
+  slug       String
+  viewerHash String
+  created_at DateTime @default(now())
+
+  @@index([slug, viewerHash])
 }

@@ -9,6 +9,7 @@ import { StickyTableOfContents } from '@/components/sticky-toc';
 import { ReadingProgress } from '@/components/reading-progress';
 import { GiscusComments } from '@/components/giscus';
 import { Metadata } from 'next';
+import { ArticleViewTracker } from '@/components/article-view-tracker';
 import Image from 'next/image';
 import Script from 'next/script';
 import rehypePrettyCode from 'rehype-pretty-code';
@@ -235,6 +236,8 @@ export default async function ArticlePage({ params }: Props) {
             {article.meta.author && <span>By {article.meta.author}</span>}
             <span>&bull;</span>
             <span>{Math.max(1, Math.ceil(article.content.split(/\s+/).length / 200))} min read</span>
+            <span>&bull;</span>
+            <ArticleViewTracker slug={article.slug} initialViews={article.views_count || 0} />
           </div>
         </header>
         
