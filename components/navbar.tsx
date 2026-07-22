@@ -9,11 +9,10 @@ import {
   InputGroup,
   Avatar,
   Dropdown,
-  Label,
   Skeleton,
 } from "@heroui/react";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
@@ -22,7 +21,52 @@ import { SearchIcon } from "@/components/icons";
 import { useAppSelector, useAppDispatch } from "@/lib/store/hooks";
 import { logout } from "@/lib/store/slices/authSlice";
 import { useGetMeQuery } from "@/lib/store/api/authApi";
-import { PlusIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { SignOutIcon } from "@phosphor-icons/react";
+
+const getInitials = (name?: string) => {
+  if (!name) return "";
+  return name.substring(0, 2).toUpperCase();
+};
+
+// Defined OUTSIDE Navbar to preserve stable identity across renders
+function UserMenu({
+  user,
+  isLoadingUser,
+  onLogout,
+}: {
+  user?: { username?: string };
+  isLoadingUser: boolean;
+  onLogout: () => void;
+}) {
+  if (isLoadingUser) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
+
+  return (
+    <Dropdown>
+      <Dropdown.Trigger>
+        <Button isIconOnly variant="light" size="sm" className="rounded-full p-0 min-w-0 w-8 h-8">
+          <Avatar size="sm" color="accent" className="transition-transform">
+            <Avatar.Fallback>{getInitials(user?.username)}</Avatar.Fallback>
+          </Avatar>
+        </Button>
+      </Dropdown.Trigger>
+      <Dropdown.Popover>
+        <Dropdown.Menu
+          onAction={(key) => {
+            if (key === "logout") onLogout();
+          }}
+        >
+          <Dropdown.Item id="logout" textValue="Log Out" variant="danger">
+            <div className="flex items-center gap-2">
+              <SignOutIcon /> Log Out
+            </div>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
+}
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,6 +74,7 @@ export const Navbar = () => {
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -58,94 +103,31 @@ export const Navbar = () => {
     </TextField>
   );
 
-  const getInitials = (name?: string) => {
-    if (!name) return "";
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  const UserMenu = () => {
-    if (isLoadingUser) {
-      return <Skeleton className="h-8 w-8 rounded-full" />;
-    }
-
-    return (
-      <Dropdown>
-        {/* Use Dropdown.Trigger directly — it renders as a button. Do NOT nest another button inside. */}
-        <Dropdown.Trigger className="rounded-full outline-none cursor-pointer">
-          <Avatar size="sm" color="accent" className="transition-transform">
-            <Avatar.Fallback>{getInitials(user?.username)}</Avatar.Fallback>
-          </Avatar>
-        </Dropdown.Trigger>
-        <Dropdown.Popover placement="bottom end" className="min-w-[200px]">
-          <Dropdown.Menu
-            onAction={(key) => {
-              if (key === "logout") dispatch(logout());
-            }}
-          >
-            {/* <Dropdown.Item id="account" href="/account" textValue="Account">
-              <Label className="flex items-center gap-2">
-                <UserIcon /> Account
-              </Label>
-            </Dropdown.Item> */}
-            <Dropdown.Item id="logout" textValue="Log Out" variant="danger">
-              <Label className="flex items-center gap-2">
-                <SignOutIcon />
-                Log Out
-              </Label>
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown.Popover>
-      </Dropdown>
-    );
-  };
-
-  // Render the auth-dependent part only after mount to avoid hydration mismatch
-  const AuthSection = () => {
+  const renderAuthSection = () => {
     if (!mounted) {
-      // Show a stable placeholder on both server and first client render
       return (
-        <NextLink href="/login">
-          <Button size="sm" variant="primary">
-            Login
-          </Button>
-        </NextLink>
+        <Button onPress={() => router.push("/login")} size="sm" color="primary">
+          Login
+        </Button>
       );
     }
 
     if (isAuthenticated) {
       return (
         <div className="flex items-center gap-3 ml-2">
-          <UserMenu />
+          <UserMenu
+            user={user ?? undefined}
+            isLoadingUser={isLoadingUser}
+            onLogout={() => dispatch(logout())}
+          />
         </div>
       );
     }
 
     return (
-      <NextLink href="/login">
-        <Button size="sm" variant="primary">
-          Login
-        </Button>
-      </NextLink>
-    );
-  };
-
-  const MobileAuthSection = () => {
-    if (!mounted) return null;
-
-    if (isAuthenticated) {
-      return (
-        <div className="flex items-center gap-2">
-          <UserMenu />
-        </div>
-      );
-    }
-
-    return (
-      <NextLink href="/login">
-        <Button size="sm" variant="primary">
-          Login
-        </Button>
-      </NextLink>
+      <Button onPress={() => router.push("/login")} size="sm" color="primary">
+        Login
+      </Button>
     );
   };
 
@@ -164,8 +146,8 @@ export const Navbar = () => {
                   <NextLink
                     className={clsx(
                       "transition-colors",
-                      isActive 
-                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold" 
+                      isActive
+                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold"
                         : "text-foreground hover:text-primary",
                     )}
                     href={item.href}
@@ -180,11 +162,21 @@ export const Navbar = () => {
 
         <div className="hidden sm:flex items-center gap-2">
           <ThemeSwitch />
-          <AuthSection />
+          {renderAuthSection()}
         </div>
 
         <div className="flex sm:hidden items-center gap-2">
-          <MobileAuthSection />
+          {mounted && isAuthenticated ? (
+            <UserMenu
+              user={user ?? undefined}
+              isLoadingUser={isLoadingUser}
+              onLogout={() => dispatch(logout())}
+            />
+          ) : (
+            <Button onPress={() => router.push("/login")} size="sm" color="primary">
+              Login
+            </Button>
+          )}
           <ThemeSwitch />
           <button
             aria-expanded={isMenuOpen}
@@ -192,26 +184,11 @@ export const Navbar = () => {
             className="p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
-                <path
-                  d="M6 18L18 6M6 6l12 12"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
+                <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
               ) : (
-                <path
-                  d="M4 6h16M4 12h16M4 18h16"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                />
+                <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
               )}
             </svg>
           </button>
@@ -228,8 +205,8 @@ export const Navbar = () => {
                   <Link
                     className={clsx(
                       "block py-2 text-lg no-underline",
-                      isActive 
-                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold" 
+                      isActive
+                        ? "bg-clip-text text-transparent bg-gradient-to-b from-[#5EA2EF] to-[#0072F5] font-bold"
                         : "text-foreground",
                     )}
                     href={item.href}

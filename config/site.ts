@@ -12,6 +12,10 @@ export const siteConfig = {
       label: "InsideTheStack",
       href: "/insidethestack",
     },
+    {
+      label: "AlgoRhythm",
+      href: "/algorhythm",
+    },
   ],
   navMenuItems: [
     {
@@ -21,6 +25,10 @@ export const siteConfig = {
     {
       label: "InsideTheStack",
       href: "/insidethestack",
+    },
+    {
+      label: "AlgoRhythm",
+      href: "/algorhythm",
     },
   ],
   links: {

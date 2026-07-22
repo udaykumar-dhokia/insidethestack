@@ -1,15 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import { baseApi } from './api/baseApi';
+import { algorhythmApi } from './api/algorhythmApi';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
       [baseApi.reducerPath]: baseApi.reducer,
+      [algorhythmApi.reducerPath]: algorhythmApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(baseApi.middleware),
+      getDefaultMiddleware().concat(baseApi.middleware, algorhythmApi.middleware),
   });
 };
 

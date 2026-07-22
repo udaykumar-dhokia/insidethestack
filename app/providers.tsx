@@ -4,20 +4,7 @@ import type { ThemeProviderProps } from "next-themes";
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import StoreProvider from "./StoreProvider";
-import { Toast } from "@heroui/react";
-
-if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-  const orig = console.error;
-  console.error = (...args: unknown[]) => {
-    if (
-      typeof args[0] === "string" &&
-      args[0].includes("Encountered a script tag")
-    ) {
-      return;
-    }
-    orig.apply(console, args);
-  };
-}
+import { ToastProvider } from "@heroui/toast";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -26,11 +13,9 @@ export interface ProvidersProps {
 
 export function Providers({ children, themeProps }: ProvidersProps) {
   return (
-    <>
-      <StoreProvider>
-        <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-      </StoreProvider>
-      <Toast.Provider placement="bottom" />
-    </>
+    <StoreProvider>
+      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+      <ToastProvider placement="bottom-right" />
+    </StoreProvider>
   );
 }
