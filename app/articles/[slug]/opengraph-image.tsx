@@ -36,6 +36,21 @@ export default async function Image({
   const title = article.meta.title || "InsideTheStack";
   const category = article.meta.category || "";
 
+  let validImageSrc: string | null = null;
+  if (article.meta.image) {
+    try {
+      const res = await fetch(article.meta.image, { method: 'HEAD' });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && (contentType.includes('image/jpeg') || contentType.includes('image/png') || contentType.includes('image/gif'))) {
+        validImageSrc = article.meta.image;
+      } else {
+        console.warn(`[OG Image] Unsupported or inaccessible image for ${slug}: ${article.meta.image}`);
+      }
+    } catch (e) {
+      console.warn(`[OG Image] Failed to fetch image for ${slug}: ${article.meta.image}`);
+    }
+  }
+
   return new ImageResponse(
     (
       <div
@@ -91,7 +106,7 @@ export default async function Image({
               flexDirection: "column",
               justifyContent: "center",
               flex: 1,
-              paddingRight: article.meta.image ? "60px" : "0",
+              paddingRight: validImageSrc ? "60px" : "0",
             }}
           >
             {category && (
@@ -115,7 +130,7 @@ export default async function Image({
                 color: "#ffffff",
                 lineHeight: 1.1,
                 letterSpacing: "-0.04em",
-                maxWidth: article.meta.image ? "600px" : "900px",
+                maxWidth: validImageSrc ? "600px" : "900px",
               }}
             >
               {title}
@@ -123,7 +138,7 @@ export default async function Image({
           </div>
 
           {/* Article Image */}
-          {article.meta.image && (
+          {validImageSrc && (
             <div
               style={{
                 display: "flex",
@@ -134,8 +149,10 @@ export default async function Image({
               }}
             >
               <img
-                src={article.meta.image}
+                src={validImageSrc}
                 alt={title}
+                width={400}
+                height={300}
                 style={{
                   width: "100%",
                   height: "100%",
