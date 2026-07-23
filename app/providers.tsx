@@ -3,8 +3,8 @@
 import type { ThemeProviderProps } from "next-themes";
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { Toast } from "@heroui/react";
 import StoreProvider from "./StoreProvider";
-import { ToastProvider } from "@heroui/toast";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -14,8 +14,10 @@ export interface ProvidersProps {
 export function Providers({ children, themeProps }: ProvidersProps) {
   return (
     <StoreProvider>
-      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
-      <ToastProvider placement="bottom-right" />
+      <NextThemesProvider {...themeProps}>
+        {children}
+      </NextThemesProvider>
+      <Toast.Provider placement="bottom-right" />
     </StoreProvider>
   );
 }

@@ -24,7 +24,11 @@ export class AlgorhythmService {
         topic: q.topic,
         leetcodeUrl: q.leetcodeUrl,
         status: p?.status || 'UNSEEN',
-        nextReviewDate: p?.next_review_date || null
+        nextReviewDate: p?.next_review_date || null,
+        lastReviewedAt: p?.last_reviewed_at || null,
+        intervalDays: p?.interval_days || 0,
+        easeFactor: p?.ease_factor || 2.5,
+        reviewCount: p?.review_count || 0,
       };
     });
   }
@@ -100,8 +104,40 @@ export class AlgorhythmService {
         interval_days: intervalDays,
         review_count: reviewCount,
         next_review_date: nextReviewDate,
-        status: status as any
+        status: status as any,
+        last_reviewed_at: new Date()
       }
     });
+  }
+
+  async getHeatmapData(userId: string) {
+    const questions = await this.getQuestions(userId);
+    
+    // Group by topic
+    const topicMap = new Map<string, any[]>();
+    questions.forEach(q => {
+      if (!topicMap.has(q.topic)) topicMap.set(q.topic, []);
+      topicMap.get(q.topic)!.push(q);
+    });
+
+    const topics = Array.from(topicMap.entries()).map(([name, questions]) => ({
+      name,
+      questions,
+    }));
+
+    // Compute stats
+    const now = new Date();
+    const totalSolved = questions.filter(q => q.status !== 'UNSEEN').length;
+    const dueToday = questions.filter(q => q.nextReviewDate && new Date(q.nextReviewDate) <= now).length;
+    const mastered = questions.filter(q => q.status === 'MASTERED').length;
+    // Decaying: solved but not mastered and not reviewed in 3+ days
+    const decaying = questions.filter(q => {
+      if (q.status === 'UNSEEN' || q.status === 'MASTERED') return false;
+      if (!q.lastReviewedAt) return false;
+      const daysSince = (now.getTime() - new Date(q.lastReviewedAt).getTime()) / (1000 * 60 * 60 * 24);
+      return daysSince > 3;
+    }).length;
+
+    return { topics, stats: { totalSolved, dueToday, decaying, mastered } };
   }
 }

@@ -170,6 +170,7 @@ model AlgoProgress {
   interval_days    Int      @default(0)
   ease_factor      Float    @default(2.5)
   review_count     Int      @default(0)
+  last_reviewed_at DateTime?
 
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt

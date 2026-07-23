@@ -8,6 +8,12 @@ export class AlgorhythmController {
   constructor(private readonly algorhythmService: AlgorhythmService) {}
 
   @UseGuards(JwtAuthGuard)
+  @Get('heatmap')
+  async getHeatmapData(@Request() req: any) {
+    return this.algorhythmService.getHeatmapData(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('questions')
   async getQuestions(@Request() req: any) {
     return this.algorhythmService.getQuestions(req.user.userId);

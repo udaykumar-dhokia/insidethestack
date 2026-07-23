@@ -46,3 +46,38 @@
 .dark .minimal-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.25);
 }
+
+/* ─── Retention Heatmap ─── */
+@keyframes retention-pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+@keyframes retention-pulse-medium {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+@keyframes retention-pulse-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.retention-cell {
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, transform 0.2s ease;
+}
+.retention-cell:hover {
+  transform: scale(1.2);
+  z-index: 10;
+}
+.retention-pulse-slow {
+  animation: retention-pulse-slow 3s ease-in-out infinite;
+}
+.retention-pulse-medium {
+  animation: retention-pulse-medium 2s ease-in-out infinite;
+}
+.retention-pulse-fast {
+  animation: retention-pulse-fast 1.2s ease-in-out infinite;
+}
+
+.decay-gradient {
+  background: linear-gradient(to right, hsl(0, 84%, 60%), hsl(30, 90%, 50%), hsl(70, 80%, 48%), hsl(142, 76%, 46%));
+}

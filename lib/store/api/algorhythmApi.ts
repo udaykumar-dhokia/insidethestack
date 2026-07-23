@@ -10,6 +10,10 @@ export interface AlgoQuestion {
   leetcodeUrl: string;
   status: "UNSEEN" | "LEARNING" | "REVIEW" | "MASTERED";
   nextReviewDate: string | null;
+  lastReviewedAt: string | null;
+  intervalDays: number;
+  easeFactor: number;
+  reviewCount: number;
 }
 
 export interface AlgoProgress {
@@ -22,6 +26,23 @@ export interface AlgoProgress {
   review_count: number;
   next_review_date: string;
   question: AlgoQuestion;
+}
+
+export interface HeatmapTopic {
+  name: string;
+  questions: AlgoQuestion[];
+}
+
+export interface HeatmapStats {
+  totalSolved: number;
+  dueToday: number;
+  decaying: number;
+  mastered: number;
+}
+
+export interface HeatmapData {
+  topics: HeatmapTopic[];
+  stats: HeatmapStats;
 }
 
 export const algorhythmApi = createApi({
@@ -57,6 +78,10 @@ export const algorhythmApi = createApi({
       }),
       invalidatesTags: ["Questions", "Reviews"],
     }),
+    getHeatmapData: builder.query<HeatmapData, void>({
+      query: () => '/heatmap',
+      providesTags: ['Questions', 'Reviews'],
+    }),
   }),
 });
 
@@ -64,4 +89,5 @@ export const {
   useGetQuestionsQuery,
   useGetDueReviewsQuery,
   useSubmitReviewMutation,
+  useGetHeatmapDataQuery,
 } = algorhythmApi;

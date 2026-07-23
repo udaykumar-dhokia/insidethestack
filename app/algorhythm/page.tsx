@@ -1,163 +1,353 @@
 "use client";
 
-import { ProgressCircle, Card, CardContent, Chip, Button } from "@heroui/react";
-import { Brain, LockKey, CircleDashed, CheckCircle } from "@phosphor-icons/react";
-import { useGetQuestionsQuery, useGetDueReviewsQuery, AlgoQuestion } from "@/lib/store/api/algorhythmApi";
-import { useState } from "react";
-import ReviewModal from "./components/review-modal";
-import AlgoTable from "./components/algo-table";
+import { useState, useMemo, useEffect } from "react";
+import {
+  ProgressCircle,
+  Chip,
+  Input,
+  Select,
+  Label,
+  ListBox,
+  Button,
+  Key,
+} from "@heroui/react";
+import { Search, Code2, Filter, LogIn, UserPlus } from "lucide-react";
+import {
+  useGetHeatmapDataQuery,
+  useGetQuestionsQuery,
+} from "@/lib/store/api/algorhythmApi";
+import { generateDemoHeatmapData } from "@/lib/demo-data";
+import { useAppSelector } from "@/lib/store/hooks";
+import NextLink from "next/link";
+import TopicAccordion from "./components/topic-accordion";
+import CircularProgressTracker from "./components/circular-progress-tracker";
 
-const tabs = [
-  { key: "due-today", label: "Due Today", icon: Brain },
-  { key: "vault", label: "The Vault", icon: LockKey },
+const DIFFICULTY_OPTIONS = [
+  { id: "ALL", name: "All Difficulty" },
+  { id: "EASY", name: "Easy" },
+  { id: "MEDIUM", name: "Medium" },
+  { id: "HARD", name: "Hard" },
+];
+
+const STATUS_OPTIONS = [
+  { id: "ALL", name: "All Status" },
+  { id: "SOLVED", name: "Solved" },
+  { id: "UNSOLVED", name: "Unsolved" },
 ];
 
 export default function AlgorhythmPage() {
-  const { data: questions, isLoading: isLoadingQuestions } = useGetQuestionsQuery();
-  const { data: dueReviews, isLoading: isLoadingReviews, refetch } = useGetDueReviewsQuery();
-  
-  const [activeTab, setActiveTab] = useState("due-today");
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<AlgoQuestion | null>(null);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
-  const handleSolve = (question: AlgoQuestion) => {
-    setSelectedQuestion(question);
-    window.open(question.leetcodeUrl, "_blank");
-    setIsOpen(true);
+  const { data: heatmapData, isLoading: isLoadingHeatmap } =
+    useGetHeatmapDataQuery(undefined, { skip: !isAuthenticated });
+  const { data: questionsData, isLoading: isLoadingQuestions } =
+    useGetQuestionsQuery(undefined, { skip: !isAuthenticated });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Key>("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<Key>("ALL");
+  const [solvedQuestions, setSolvedQuestions] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Use demo data if API returns empty/no activity or while logged out
+  const fallbackData = useMemo(() => generateDemoHeatmapData(), []);
+
+  const displayData = useMemo(() => {
+    if (isAuthenticated && heatmapData && heatmapData.topics && heatmapData.topics.length > 0) {
+      return heatmapData;
+    }
+    return fallbackData;
+  }, [isAuthenticated, heatmapData, fallbackData]);
+
+  // Sync initial solved status from data
+  useEffect(() => {
+    if (displayData?.topics) {
+      const initialSolved = new Set<string>();
+      displayData.topics.forEach((t) => {
+        t.questions.forEach((q) => {
+          if (q.status === "MASTERED" || q.status === "REVIEW") {
+            initialSolved.add(q.id);
+          }
+        });
+      });
+      setSolvedQuestions(initialSolved);
+    }
+  }, [displayData]);
+
+  const handleToggleSolved = (questionId: string) => {
+    setSolvedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+      return next;
+    });
   };
 
-  const masteredCount = questions?.filter(q => q.status === 'MASTERED').length || 0;
-  const totalCount = questions?.length || 150;
-  const completionPercentage = Math.round((masteredCount / totalCount) * 100) || 0;
+  // Compute aggregate statistics
+  const stats = useMemo(() => {
+    if (!displayData?.topics) {
+      return {
+        total: 0,
+        solved: 0,
+        easyTotal: 0,
+        easySolved: 0,
+        mediumTotal: 0,
+        mediumSolved: 0,
+        hardTotal: 0,
+        hardSolved: 0,
+      };
+    }
 
-  if (isLoadingQuestions || isLoadingReviews) {
+    let total = 0;
+    let easyTotal = 0;
+    let easySolved = 0;
+    let mediumTotal = 0;
+    let mediumSolved = 0;
+    let hardTotal = 0;
+    let hardSolved = 0;
+
+    displayData.topics.forEach((topic) => {
+      topic.questions.forEach((q) => {
+        total++;
+        const isSolved =
+          solvedQuestions.has(q.id) ||
+          q.status === "MASTERED" ||
+          q.status === "REVIEW";
+
+        if (q.difficulty === "EASY") {
+          easyTotal++;
+          if (isSolved) easySolved++;
+        } else if (q.difficulty === "MEDIUM") {
+          mediumTotal++;
+          if (isSolved) mediumSolved++;
+        } else if (q.difficulty === "HARD") {
+          hardTotal++;
+          if (isSolved) hardSolved++;
+        }
+      });
+    });
+
+    const solved = solvedQuestions.size;
+
+    return {
+      total,
+      solved,
+      easyTotal,
+      easySolved,
+      mediumTotal,
+      mediumSolved,
+      hardTotal,
+      hardSolved,
+    };
+  }, [displayData, solvedQuestions]);
+
+  if (isAuthenticated && isLoadingHeatmap && isLoadingQuestions) {
     return (
-      <div className="flex justify-center items-center h-[50vh]">
-        <ProgressCircle size="lg" aria-label="Loading..." isIndeterminate />
+      <div className="flex flex-col justify-center items-center h-[60vh] gap-3">
+        <ProgressCircle
+          size="lg"
+          aria-label="Loading questions..."
+          isIndeterminate
+        />
+        <p className="text-sm text-default-500 font-medium">
+          Loading Question Bank...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Hero Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
-            AlgoRhythm
-          </h1>
-          <p className="text-default-500">Master AlgoRhythm through Spaced Repetition.</p>
-        </div>
-        
-        <Card className="bg-default-50 border-none shadow-none">
-          <CardContent className="flex flex-row items-center gap-4 py-3">
-            <ProgressCircle
-              value={completionPercentage}
-              color="primary"
-              showValueLabel={true}
-              classNames={{
-                svg: "w-12 h-12",
-                value: "text-sm font-semibold",
-              }}
-            />
-            <div>
-              <p className="text-sm font-medium">Overall Mastery</p>
-              <p className="text-xs text-default-500">{masteredCount} of {totalCount} completed</p>
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
+      {/* Logged Out Guest Banner */}
+      {!isAuthenticated && (
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+              <Code2 className="h-5 w-5" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Custom Tab Bar — avoids HeroUI Tabs collection component */}
-      <div className="w-full border-b border-divider mb-6">
-        <div className="flex gap-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 px-0 h-12 text-sm font-medium border-b-2 transition-colors ${
-                  isActive
-                    ? "border-primary text-primary"
-                    : "border-transparent text-default-500 hover:text-foreground"
-                }`}
-              >
-                <Icon size={18} />
-                <span>{tab.label}</span>
-                {tab.key === "due-today" && dueReviews && dueReviews.length > 0 && (
-                  <Chip size="sm" color="danger" variant="flat">{dueReviews.length}</Chip>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === "due-today" && (
-        <div className="py-2">
-          {!dueReviews || dueReviews.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-divider rounded-xl bg-default-50">
-              <div className="text-success mb-4">
-                <CheckCircle size={48} weight="fill" />
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-foreground">
+                  Guest Preview Mode
+                </h3>
+                <Chip size="sm" color="primary" variant="flat" className="text-[11px] font-semibold">
+                  Preview
+                </Chip>
               </div>
-              <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
-              <p className="text-default-500 max-w-sm">
-                You have completed all your scheduled reviews for today. Check out the Vault to learn something new.
+              <p className="text-xs text-default-500 mt-0.5">
+                You are currently exploring the DSA Question Bank in preview mode. Log in or create an account to save your solving progress!
               </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dueReviews.map((review) => (
-                <Card key={review.id} className="border border-divider">
-                  <CardContent className="p-5">
-                    <div className="flex justify-between items-start mb-4">
-                      <Chip size="sm" variant="flat" color="warning">Review</Chip>
-                      <Chip 
-                        size="sm" 
-                        variant="dot" 
-                        color={review.question.difficulty === 'EASY' ? 'success' : review.question.difficulty === 'MEDIUM' ? 'warning' : 'danger'}
-                      >
-                        {review.question.difficulty}
-                      </Chip>
-                    </div>
-                    <h3 className="text-lg font-semibold mb-1 truncate" title={review.question.title}>
-                      {review.question.title}
-                    </h3>
-                    <p className="text-sm text-default-500 mb-6">{review.question.topic}</p>
-                    <Button 
-                      color="primary" 
-                      className="w-full font-medium"
-                      onPress={() => handleSolve(review.question)}
-                    >
-                      Solve Now
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+            <Button
+              as={NextLink}
+              href="/login"
+              color="primary"
+              size="sm"
+              className="flex-1 sm:flex-initial text-xs font-semibold gap-1.5"
+            >
+              <LogIn className="h-3.5 w-3.5" />
+              <span>Log In</span>
+            </Button>
+            <Button
+              as={NextLink}
+              href="/signup"
+              variant="tertiary"
+              size="sm"
+              className="flex-1 sm:flex-initial text-xs font-semibold gap-1.5 text-default-700"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Sign Up</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div className="flex items-center justify-between gap-4 pb-4 border-b border-default-200/60">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <Code2 className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
+                AlgoRhythm
+              </h1>
+              <Chip color="primary" variant="flat" size="sm" className="font-semibold">
+                DSA Vault
+              </Chip>
             </div>
+            <p className="text-default-500 text-sm">
+              Curated Data Structures & Algorithms practice roadmap.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Question Bank */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Question Bank Header & Filtering Toolbar */}
+          <div className="p-4 rounded-2xl border border-default-200/60 bg-background/80 backdrop-blur-md shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-bold text-foreground">
+                  Question Bank
+                </h2>
+              </div>
+            </div>
+
+            {/* Filter Bar: Search Input & HeroUI Select Components */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              {/* Search Input */}
+              <div className="sm:col-span-6">
+                <Input
+                  placeholder="Search questions or topics..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  startContent={<Search className="h-4 w-4 text-default-400" />}
+                  size="sm"
+                  variant="flat"
+                  isClearable
+                  onClear={() => setSearchQuery("")}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Difficulty Select Dropdown (HeroUI Select) */}
+              <div className="sm:col-span-3">
+                <Select
+                  className="w-full"
+                  value={selectedDifficulty}
+                  onChange={(val) => setSelectedDifficulty(val || "ALL")}
+                  size="sm"
+                >
+                  <Label className="text-[11px] font-semibold text-default-500 uppercase tracking-wider mb-1 block">
+                    Difficulty
+                  </Label>
+                  <Select.Trigger className="w-full h-9 rounded-lg border border-default-200 bg-default-100/60 px-3 py-1 text-xs font-medium">
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      {DIFFICULTY_OPTIONS.map((opt) => (
+                        <ListBox.Item
+                          key={opt.id}
+                          id={opt.id}
+                          textValue={opt.name}
+                          className="text-xs py-1.5"
+                        >
+                          {opt.name}
+                          <ListBox.ItemIndicator />
+                        </ListBox.Item>
+                      ))}
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              </div>
+
+              {/* Status Select Dropdown (HeroUI Select) */}
+              <div className="sm:col-span-3">
+                <Select
+                  className="w-full"
+                  value={selectedStatus}
+                  onChange={(val) => setSelectedStatus(val || "ALL")}
+                  size="sm"
+                >
+                  <Label className="text-[11px] font-semibold text-default-500 uppercase tracking-wider mb-1 block">
+                    Status
+                  </Label>
+                  <Select.Trigger className="w-full h-9 rounded-lg border border-default-200 bg-default-100/60 px-3 py-1 text-xs font-medium">
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <ListBox.Item
+                          key={opt.id}
+                          id={opt.id}
+                          textValue={opt.name}
+                          className="text-xs py-1.5"
+                        >
+                          {opt.name}
+                          <ListBox.ItemIndicator />
+                        </ListBox.Item>
+                      ))}
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Accordions View */}
+          {displayData?.topics && (
+            <TopicAccordion
+              topics={displayData.topics}
+              searchQuery={searchQuery}
+              selectedDifficulty={String(selectedDifficulty)}
+              selectedStatus={String(selectedStatus)}
+              solvedQuestions={solvedQuestions}
+              onToggleSolved={handleToggleSolved}
+            />
           )}
         </div>
-      )}
 
-      {activeTab === "vault" && (
-        <div className="py-2">
-          <AlgoTable questions={questions || []} onSolve={handleSolve} />
+        {/* Right Column: Problem Solving Dashboard (Fixed/Sticky Sidebar) */}
+        <div className="lg:col-span-4 sticky top-24">
+          <CircularProgressTracker stats={stats} />
         </div>
-      )}
-
-      {selectedQuestion && (
-        <ReviewModal 
-          isOpen={isOpen} 
-          onOpenChange={setIsOpen} 
-          question={selectedQuestion} 
-          onReviewSubmitted={() => {
-            refetch();
-          }}
-        />
-      )}
+      </div>
     </div>
   );
 }
