@@ -1,0 +1,25 @@
+# Inside The Stack - AI Agent Rules
+
+## Project Overview
+"Inside The Stack" is a platform for in-depth technical articles, architecture breakdowns, and algorithm references.
+
+## Tech Stack
+- **Framework**: Next.js 15+ (App Router)
+- **UI Library**: React 19, HeroUI (v3.2.2), Tailwind CSS v4
+- **State Management**: Redux Toolkit
+- **Rich Text Editor**: TipTap (with Markdown support)
+- **Database / ORM**: Prisma
+- **Styling**: Tailwind Variants, PostCSS
+
+## Core Commands
+- `npm run dev` - Start the Next.js development server
+- `npm run build` - Build the app (includes sitemap generation via `scripts/generate-sitemap.mjs`)
+- `npm run lint` - Run ESLint
+- `npm run start` - Start the production build
+
+## Agent Guidelines
+1. **HeroUI**: Always refer to the `AGENTS.md` file for HeroUI documentation and API references. Do not guess HeroUI component props.
+2. **App Router**: Ensure all new pages are created using the Next.js App Router (`app/` directory). Use `layout.tsx`, `page.tsx`, and `error.tsx` conventions.
+3. **Client vs Server Components**: By default, components are Server Components. Add `"use client";` at the top of the file only when interactivity or hooks (like `useState`, `useEffect`, Redux hooks) are required.
+4. **Styling**: Use Tailwind CSS for all styling. Rely on HeroUI's built-in variants when extending component styles.
+5. **SEO First**: Ensure proper `<title>` and `<meta>` descriptions are implemented for all content pages (articles, algorithms, blogs) to maintain high SEO ranking.

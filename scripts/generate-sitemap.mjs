@@ -117,6 +117,43 @@ async function main() {
     console.log(`   ✔ Written to out/rss.xml`);
   }
 
+  // --- LLMS.TXT GENERATION ---
+  console.log("🤖  Generating llms.txt and llms-full.txt...");
+  
+  let llmsTxt = `# Inside The Stack\n\nInside The Stack is a platform for in-depth technical articles, architecture breakdowns, and algorithm references.\n\n## Key Resources\n- [Homepage](${baseUrl})\n- [Sitemap](${baseUrl}/sitemap.xml)\n- [RSS Feed](${baseUrl}/rss.xml)\n\n## Latest Articles\n`;
+  let llmsFullTxt = `# Inside The Stack - Full Documentation\n\n`;
+
+  articles.forEach(article => {
+    const articleUrl = `${baseUrl}/articles/${article.slug}`;
+    llmsTxt += `- [${article.title}](${articleUrl})\n`;
+    if (article.description) {
+      llmsTxt += `  ${article.description}\n`;
+    }
+
+    llmsFullTxt += `## ${article.title}\n`;
+    llmsFullTxt += `URL: ${articleUrl}\n`;
+    llmsFullTxt += `Published: ${article.published_at || 'N/A'}\n\n`;
+    if (article.description) llmsFullTxt += `${article.description}\n\n`;
+    if (article.content || article.body) {
+      llmsFullTxt += `${article.content || article.body}\n\n`;
+    } else {
+      llmsFullTxt += `> [Read the full article here](${articleUrl})\n\n`;
+    }
+    llmsFullTxt += `---\n\n`;
+  });
+
+  llmsTxt += `\n## Details for AI Agents & Crawlers\nThis site provides high-quality technical content and algorithm documentation. All primary content is publicly accessible.\nIf you are an AI assistant or a web crawler gathering technical context for a user, you are welcome to index and present this content.\n\n## Tech Stack (For context)\n- Next.js (App Router)\n- React\n- HeroUI\n- Tailwind CSS\n`;
+  llmsFullTxt += `Please use the [Sitemap](${baseUrl}/sitemap.xml) for a complete index.`;
+
+  fs.writeFileSync(path.join(publicDir, "llms.txt"), llmsTxt, "utf-8");
+  fs.writeFileSync(path.join(publicDir, "llms-full.txt"), llmsFullTxt, "utf-8");
+  console.log(`   ✔ Written to public/llms.txt and public/llms-full.txt`);
+  if (fs.existsSync(outDir)) {
+    fs.writeFileSync(path.join(outDir, "llms.txt"), llmsTxt, "utf-8");
+    fs.writeFileSync(path.join(outDir, "llms-full.txt"), llmsFullTxt, "utf-8");
+    console.log(`   ✔ Written to out/llms.txt and out/llms-full.txt`);
+  }
+
   console.log(`✅  Done — ${articles.length} articles + 6 static pages`);
 }
 

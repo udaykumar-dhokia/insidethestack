@@ -71,40 +71,79 @@ export default async function Image({
           <div style={{ display: "flex", color: "#ffffff" }}>TheStack</div>
         </div>
 
-        {/* Article Info */}
+        {/* Content Area */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+            flex: 1,
+            marginTop: "40px",
+            marginBottom: "40px",
           }}
         >
-          {category && (
-            <div
-              style={{
-                color: "#3b82f6",
-                fontSize: 28,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                marginBottom: "20px",
-              }}
-            >
-              {category}
-            </div>
-          )}
+          {/* Article Info */}
           <div
             style={{
-              fontSize: 72,
-              fontWeight: 900,
-              color: "#ffffff",
-              lineHeight: 1.1,
-              letterSpacing: "-0.04em",
-              maxWidth: "900px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              flex: 1,
+              paddingRight: article.meta.image ? "60px" : "0",
             }}
           >
-            {title}
+            {category && (
+              <div
+                style={{
+                  color: "#3b82f6",
+                  fontSize: 28,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: "20px",
+                }}
+              >
+                {category}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: 64,
+                fontWeight: 900,
+                color: "#ffffff",
+                lineHeight: 1.1,
+                letterSpacing: "-0.04em",
+                maxWidth: article.meta.image ? "600px" : "900px",
+              }}
+            >
+              {title}
+            </div>
           </div>
+
+          {/* Article Image */}
+          {article.meta.image && (
+            <div
+              style={{
+                display: "flex",
+                width: "400px",
+                height: "300px",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <img
+                src={article.meta.image}
+                alt={title}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer */}

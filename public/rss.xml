@@ -8,6 +8,13 @@
     <atom:link href="https://udaykumar-dhokia.github.io/insidethestack/rss.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title><![CDATA[How Telegram Actually Works]]></title>
+      <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-telegram-works</link>
+      <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-telegram-works</guid>
+      <pubDate>Thu, 23 Jul 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[A deep dive into Telegram's architecture, the cloud-native design that syncs your chats across every device, the custom MTProto protocol built for hostile networks, and the radical team-size philosophy that keeps a billion-user platform running on a team you could fit in one conference room.]]></description>
+    </item>
+    <item>
       <title><![CDATA[How WhatsApp Actually Works]]></title>
       <link>https://udaykumar-dhokia.github.io/insidethestack/articles/how-whatsapp-works</link>
       <guid>https://udaykumar-dhokia.github.io/insidethestack/articles/how-whatsapp-works</guid>

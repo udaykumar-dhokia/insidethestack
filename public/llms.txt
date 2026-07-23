@@ -1,0 +1,54 @@
+# Inside The Stack
+
+Inside The Stack is a platform for in-depth technical articles, architecture breakdowns, and algorithm references.
+
+## Key Resources
+- [Homepage](https://udaykumar-dhokia.github.io/insidethestack)
+- [Sitemap](https://udaykumar-dhokia.github.io/insidethestack/sitemap.xml)
+- [RSS Feed](https://udaykumar-dhokia.github.io/insidethestack/rss.xml)
+
+## Latest Articles
+- [How Telegram Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-telegram-works)
+  A deep dive into Telegram's architecture, the cloud-native design that syncs your chats across every device, the custom MTProto protocol built for hostile networks, and the radical team-size philosophy that keeps a billion-user platform running on a team you could fit in one conference room.
+- [How WhatsApp Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-whatsapp-works)
+  A deep dive into WhatsApp's architecture, the decades-old telecom language behind its massive concurrency, the 'let it crash' philosophy that keeps it running through failures, and how a team of around 50 engineers served hundreds of millions of users.
+- [How Figma Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-figma-works)
+  A deep dive into Figma's architecture, the custom C++ rendering engine compiled to WebAssembly, the deliberately simple conflict-resolution system behind multiplayer editing, and the four-year journey from one Postgres database to a fully sharded fleet.
+- [How n8n Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-n8n-works)
+  A deep dive into n8n's architecture, how the execution engine walks your workflow like a checklist, why a single slow node can block everything after it, and how queue mode turns a fragile single server into a system that survives 20,000 webhooks at once.
+- [How Replit Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-replit-works)
+  A deep dive into Replit's architecture, the storage engine that lets you fork an entire app instantly, the sandboxed databases that keep an AI agent from wrecking your production data, and the multi-agent system doing the actual building.
+- [How Supabase Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-supabase-works)
+  A deep dive into Supabase's architecture, how a schema becomes an instant API, how database changes stream live to your screen over a write-ahead log, and how a connection pooler was built to handle a million connections to Postgres at once.
+- [How Dropbox Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-dropbox-works)
+  A deep dive into Dropbox's architecture, the custom-built Magic Pocket storage system holding exabytes of data, and Nucleus, the from-scratch Rust rewrite of the sync engine running on half a billion devices.
+- [How Postman Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-postman-works)
+  A deep dive into Postman's architecture from the simple client-server design behind every request you send, to the microservices, Kubernetes migration, and Context Graph powering its newest AI agents.
+- [How Slack Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-slack-works)
+  A deep dive into Slack's architecture, the Channel Servers, Gateway Servers, and WebSocket connections that deliver messages across the globe in under 500 milliseconds, and the video-game origins that shaped it all.
+- [How Vercel Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-vercel-works)
+  A deep dive into Vercel's architecture the deployment pipeline, the global edge network, and the serverless and edge functions that let a git push turn into a live, fast website anywhere in the world.
+- [How NotebookLM Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-notebooklm-works)
+  A deep dive into how NotebookLM turns your own documents into grounded answers, audio podcasts, and research reports, the retrieval pipeline, and the long-context Gemini model.
+- [How Notion Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-notion-works)
+  A deep dive into Notion's architecture the block-based data model at its core, how it scaled a single Postgres database to 200 billion blocks, and how real-time collaboration stays smooth across millions of users.
+- [How Lovable Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-lovable-works)
+  How Lovable turns plain-English prompts into real, working full-stack apps.
+- [How GitHub Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-github-works)
+  A deep dive into GitHub's architecture  the Rails monolith at its core, the Spokes system that keeps every repository alive on three servers at once, and the scaling decisions behind a platform serving hundreds of millions of developers.
+- [How Perplexity Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-perplexity-works)
+  A deep dive into Perplexity AI's architecture from its Vespa-powered search backbone to the Sonar model family, multi-model routing, and how it turns a raw question into a cited, real-time answer.
+- [How Cursor Actually Works](https://udaykumar-dhokia.github.io/insidethestack/articles/how-cursor-ide-works)
+  A deep dive into how Cursor IDE blends a familiar code editor with AI  from codebase indexing to multi-model routing to how it applies a diff without breaking your file.
+- [How OpenAI Scales ChatGPT](https://udaykumar-dhokia.github.io/insidethestack/articles/how-openai-scales-chatgpt)
+  A deep dive into the infrastructure and architecture decisions that allow ChatGPT to serve hundreds of millions of users concurrently.
+
+## Details for AI Agents & Crawlers
+This site provides high-quality technical content and algorithm documentation. All primary content is publicly accessible.
+If you are an AI assistant or a web crawler gathering technical context for a user, you are welcome to index and present this content.
+
+## Tech Stack (For context)
+- Next.js (App Router)
+- React
+- HeroUI
+- Tailwind CSS
