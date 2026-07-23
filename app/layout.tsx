@@ -2,13 +2,14 @@ import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import clsx from "clsx";
 import { Providers } from "./providers";
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://udaykumar-dhokia.github.io/insidethestack"),
@@ -30,9 +31,11 @@ export const metadata: Metadata = {
     "Cloud Architecture",
     "How Software Works",
     "How Platforms Work",
-    "System Architecture Explained"
+    "System Architecture Explained",
   ],
-  authors: [{ name: "udthedeveloper", url: "https://github.com/udaykumar-dhokia" }],
+  authors: [
+    { name: "udthedeveloper", url: "https://github.com/udaykumar-dhokia" },
+  ],
   creator: "udthedeveloper",
   publisher: "InsideTheStack",
   formatDetection: {
@@ -53,7 +56,7 @@ export const metadata: Metadata = {
         width: 32,
         height: 32,
         alt: "InsideTheStack Logo",
-      }
+      },
     ],
   },
   twitter: {
@@ -69,9 +72,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
   icons: {
@@ -81,7 +84,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     types: {
-      'application/rss+xml': '/rss.xml',
+      "application/rss+xml": "/rss.xml",
     },
   },
 };
@@ -113,6 +116,7 @@ export default function RootLayout({
             <Navbar />
             <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
               {children}
+              <Analytics />
             </main>
             <Footer />
           </div>
@@ -125,10 +129,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "InsideTheStack",
-              "alternateName": ["Inside The Stack", "InsideTheStack Blog"],
-              "url": "https://udaykumar-dhokia.github.io/insidethestack"
-            })
+              name: "InsideTheStack",
+              alternateName: ["Inside The Stack", "InsideTheStack Blog"],
+              url: "https://udaykumar-dhokia.github.io/insidethestack",
+            }),
           }}
         />
       </body>

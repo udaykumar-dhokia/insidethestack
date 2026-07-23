@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import { Ctx, EventPattern, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { EmailServiceService, SendOtpPayload } from './email-service.service';
 import { RmqService } from '@app/shared';
 
@@ -15,13 +15,14 @@ export class EmailServiceController {
     return { status: 'ok', service: 'email-service' };
   }
 
-  @EventPattern('send_otp_email')
+  @MessagePattern('send_otp_email')
   async handleSendOtpEmail(
     @Payload() data: SendOtpPayload,
     @Ctx() context: RmqContext,
   ) {
     await this.emailServiceService.sendOtpEmail(data);
     this.rmqService.ack(context);
+    return { success: true };
   }
 
   @EventPattern('send_email')

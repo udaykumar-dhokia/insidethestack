@@ -14,7 +14,9 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../shared/prisma.service';
 import { SignupInitiateDto } from './dto/signup-initiate.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { EmailServiceService } from '../../../email-service/src/email-service.service';
 import { LoginDto } from './dto/login.dto';
+import { firstValueFrom } from 'rxjs';
 
 const OTP_TTL_MINUTES = 10;
 
@@ -24,6 +26,7 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
     @Inject('EMAIL_SERVICE') private readonly clientProxy: ClientProxy,
+    private readonly emailService: EmailServiceService,
   ) {}
 
   async initiateSignup(data: SignupInitiateDto) {
@@ -67,7 +70,7 @@ export class AuthService {
       },
     });
 
-    this.clientProxy.emit('send_otp_email', {
+    await this.emailService.sendOtpEmail({
       to: data.email,
       first_name: data.first_name,
       otp,

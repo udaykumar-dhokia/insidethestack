@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../shared/prisma.service';
 import { RmqModule } from '@app/shared';
+import { EmailServiceService } from '../../../email-service/src/email-service.service';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import { RmqModule } from '@app/shared';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService],
+  providers: [AuthService, PrismaService, EmailServiceService],
 })
 export class AuthModule {}
