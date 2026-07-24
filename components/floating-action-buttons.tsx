@@ -16,6 +16,7 @@ export function FloatingActionButtons({ articleId, title, platformUrl }: Floatin
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState('');
   const [showTop, setShowTop] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
   const { data: likeStatus, isLoading: isLikeStatusLoading } = useGetLikeStatusQuery(articleId as string, {
@@ -89,16 +90,23 @@ export function FloatingActionButtons({ articleId, title, platformUrl }: Floatin
   const baseButtonClass = "group relative flex items-center justify-center w-14 h-14 rounded-full bg-content2/80 backdrop-blur-md border border-divider shadow-lg hover:border-primary hover:text-primary transition-all duration-300";
 
   return (
-    <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 flex flex-col gap-3 z-50">
-      {showTop && (
-        <button
-          onClick={scrollToTop}
-          className={baseButtonClass}
-          title="Scroll to Top"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-        </button>
-      )}
+    <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 flex flex-col gap-3 z-50 items-center">
+      <div 
+        className={`flex flex-col gap-3 transition-all duration-300 origin-bottom items-center ${
+          isExpanded 
+            ? 'scale-100 opacity-100 pointer-events-auto' 
+            : 'scale-90 opacity-0 pointer-events-none md:scale-100 md:opacity-100 md:pointer-events-auto'
+        }`}
+      >
+        {showTop && (
+          <button
+            onClick={scrollToTop}
+            className={baseButtonClass}
+            title="Scroll to Top"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+          </button>
+        )}
 
       {articleId && (
         <button
@@ -191,6 +199,27 @@ export function FloatingActionButtons({ articleId, title, platformUrl }: Floatin
             Link Copied!
           </span>
         )}
+      </button>
+      </div>
+
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`md:hidden group relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg transition-all duration-300 ${
+          isExpanded 
+            ? 'bg-primary text-primary-foreground border border-primary' 
+            : 'bg-content2/80 backdrop-blur-md border border-divider hover:border-primary hover:text-primary'
+        }`}
+        title="Toggle Menu"
+      >
+        <svg 
+          className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? 'rotate-45' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
       </button>
     </div>
   );
